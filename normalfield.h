@@ -5,6 +5,8 @@ class NormalField
 {
 public:
     NormalField();
+    
+    // Построение портрета
 };
 
 #endif // NORMALFIELD_H
