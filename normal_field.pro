@@ -4,10 +4,12 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += main.cpp \
-    grid.cpp
+    grid.cpp \
+    normalfield.cpp
 
 HEADERS += \
-    grid.h
+    grid.h \
+    normalfield.h
 
 OTHER_FILES += \
     area.txt \
