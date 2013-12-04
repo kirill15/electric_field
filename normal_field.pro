@@ -2,14 +2,19 @@ TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
+QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES += main.cpp \
-    grid.cpp \
-    normalfield.cpp
+    normalfield.cpp \
+    grid2D.cpp \
+    slae.cpp \
+    matrixfem.cpp
 
 HEADERS += \
-    grid.h \
-    normalfield.h
+    normalfield.h \
+    grid2D.h \
+    slae.h \
+    matrixfem.h
 
 OTHER_FILES += \
     area.txt \

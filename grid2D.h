@@ -34,19 +34,24 @@ private:
     vector < pair <int, double> > partitionsR; // Пары <Количество подынтервалов по оси r> <Коэффициент разрядки>
     vector < pair <int, double> > partitionsZ; // Пары <Количество подынтервалов по оси z> <Коэффициент разрядки>
 
-    long countPoints; // Количество узлов
-    long countFE; // Количество КЭ
+    uint countPoints; // Количество узлов
+    uint countFE; // Количество КЭ
 
+public:
     // Массивы, описывающие КЭ:
     Coord *rz; // Координаты узлов
-    long **nvtr; // Глобальные номера узлов каждого КЭ
-    long *nvkat; // Номер области для каждого КЭ
+    uint **nvtr; // Глобальные номера узлов каждого КЭ
+    uint *nvkat; // Номер области для каждого КЭ
 
+
+
+private:
     // Создание массивов nvtr, rz, nvkat
     void createArrays(double *r, double *z, long sizeR, long sizeZ);
 
 public:
     Grid2D();
+    ~Grid2D();
 
 
 
@@ -107,6 +112,16 @@ public:
     * Возвращает 0 в случае успешного выполнения
     */
     int txtToDat(string pathToProgram);
+
+
+
+    // Возвращает количество узлов
+    unsigned getCountPoints() const;
+
+
+
+    // Возвращает количество К.Э.
+    unsigned getCountFE() const;
 };
 
 

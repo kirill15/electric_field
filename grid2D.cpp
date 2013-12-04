@@ -1,4 +1,5 @@
-#include "grid.h"
+#include "grid2D.h"
+
 
 void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
 {
@@ -21,13 +22,13 @@ void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
     countFE = countPoints - sizeR - sizeZ + 1;
 
     // Создаем массив nvtr
-    nvtr = new long*[countFE];
+    nvtr = new uint*[countFE];
     k = 0;
     for (long iZ = 0; iZ < sizeZ - 1; iZ++)
     {
         for (long iR = 0; iR < sizeR - 1; iR++)
         {
-            nvtr[k] = new long[4];
+            nvtr[k] = new uint[4];
 
             nvtr[k][0] = iZ * sizeR + iR;
             nvtr[k][1] = nvtr[k][0] + 1;
@@ -39,7 +40,7 @@ void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
     }
 
     // Создаем массив nvkat
-    nvkat = new long[countFE];
+    nvkat = new uint[countFE];
     k = 0;
     for (size_t iZ = 0; iZ < partitionsZ.size(); iZ++)                      // Проход по всем областям по оси Z
     {
@@ -59,6 +60,23 @@ void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
 
 Grid2D::Grid2D()
 {
+}
+
+Grid2D::~Grid2D()
+{
+    delete[] rw;
+    delete[] zw;
+    if (areas)
+    {
+        for (size_t i = 0; i < l; i++)
+            delete[] areas[i];
+        delete areas;
+    }
+    delete[] rz;
+    for (size_t i = 0; i < countFE; i++)
+        delete[] nvtr[i];
+    delete[] nvtr;
+    delete nvkat;
 }
 
 
@@ -221,18 +239,18 @@ void Grid2D::saveGrid()
 
     f.open("nvtr.txt");
     f << countFE << endl;
-    for (long i = 0; i < countFE; i++)
+    for (size_t i = 0; i < countFE; i++)
         f << nvtr[i][0] + 1 << " " << nvtr[i][1] + 1 << " " << nvtr[i][2] + 1 << " " << nvtr[i][3] + 1 << endl;
     f.close();
 
     f.open("nvkat.txt");
-    for (long i = 0; i < countFE; i++)
+    for (size_t i = 0; i < countFE; i++)
         f << nvkat[i] + 1 << endl;
     f.close();
 
     f.open("rz.txt");
     f << countPoints << endl;
-    for (long i = 0; i < countPoints; i++)
+    for (size_t i = 0; i < countPoints; i++)
         f << rz[i].r << " " << rz[i].z << endl;
     f.close();
 }
@@ -240,7 +258,8 @@ void Grid2D::saveGrid()
 
 int Grid2D::txtToDat(string pathToProgram)
 {
-    if (execl(pathToProgram.c_str(), "txttodat", NULL) == -1)
+    //if (execl(pathToProgram.c_str(), "txttodat", NULL) == -1)
+    if (system(pathToProgram.c_str()) == -1)
     {
         cerr << "Ошибка вызова txttodat" << endl;
         return -1;
@@ -249,6 +268,16 @@ int Grid2D::txtToDat(string pathToProgram)
 }
 
 
+unsigned Grid2D::getCountPoints() const
+{
+    return countPoints;
+}
+
+
+unsigned Grid2D::getCountFE() const
+{
+    return countFE;
+}
 
 
 
