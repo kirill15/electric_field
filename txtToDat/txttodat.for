@@ -51,12 +51,14 @@
         write(2, *) 'kisrr1= 2 kisrr2= 2 kisrr3= 2  kbrsr= 8'
         write(2, *) 'kreb4= 0'
 
-        
-        
+
+        open(2, file = 'v.txt');
         open(3, file = path//'v2.dat', access = 'direct', recl=8)
         do i = 1, kuzlov
-          write(3, rec = i) 0.0
+          read(2, *) v
+          write(3, rec = i) v
         enddo
+        close(2)
         close(3)
                 
         END PROGRAM

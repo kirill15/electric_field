@@ -6,31 +6,7 @@
 
 #include <set>
 #include "grid2D.h"
-
-// Тип - Матрица в разреженном строчном формате
-/* Индексы с 0! */
-struct Matrix
-{
-    unsigned int n;   // Размерность матрицы
-    unsigned int *ig; // Указатели начала строк
-    unsigned int *jg; // Номера столбоцов внедиагональных элементов матрицы
-    double *ggl; 	  // Элементы нижнего треуголника
-    double *ggu; 	  // Элементы верхнего треуголника
-    double *di;		  // Диагональные элементы матрицы
-
-    Matrix() : ig(nullptr), jg(nullptr), ggl(nullptr), ggu(nullptr), di(nullptr) {}
-
-    ~Matrix()
-    {/*
-        delete[] ig;
-        delete[] jg;
-        delete[] ggl;
-        //if (ggu)
-          //  delete[] ggu;
-        delete[] di;*/
-    }
-};
-
+#include "slae.h"
 
 class MatrixFEM
 {
@@ -55,7 +31,7 @@ public:
     void generatePortrait(Grid2D *grid, unsigned sizeOfElement = 4);
 
     // Считывание портрета матрицы СЛАУ
-    /* В файле ig первая запись - размерность матрицы
+    /* В файле ig первая запись - размерность матрицы (****НЕ ХАРОШИЙ****)
      */
     int readPortrait(string ig, string jg);
 
@@ -68,7 +44,7 @@ public:
 
 
     // Возвращает матрицу
-    Matrix *matrix();
+    Matrix &matrix();
 };
 
 #endif // MATRIXFEM_H

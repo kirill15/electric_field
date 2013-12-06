@@ -18,10 +18,14 @@ private:
 
     double *v; // Вектор весов (решение СЛАУ)
 
-    double eps;
+    double eps; // Точность решения СЛАУ (По-умолчанию 1e-15)
+
+    unsigned sourceNode; // Номер узла точечного источника
+    double sourceValue; // Значение плотности источника
 
     // Значение sigma
     double sigma(int nvk);
+
 
 public:
     NormalField();
@@ -30,6 +34,8 @@ public:
     {
         delete grid;
         delete matrix;
+        delete[] f;
+        delete[] v;
     }
 
 
@@ -40,8 +46,11 @@ public:
      */
     void createLocalG(const Coord p[4], int nvk, double G[4][4]);
 
-    // Глобальная СЛАУ
-    void createGlobalSLAE();
+    // Глобальная Матрица
+    void createGlobalMatrix();
+
+    // Глобальный вектор правой части
+    void createGlobalRightPart();
 
     // Решение СЛАУ
     void solve();
@@ -77,6 +86,21 @@ public:
 
     // Задать матрицу
     void setMatrix(MatrixFEM *value);
+
+    // Получить значение eps
+    double getEps() const;
+
+    // Задать значение eps
+    void setEps(double value);
+
+    // Получить позицию и значение источника
+    void getSource(unsigned &node, double &value) const;
+
+    // Задать позицию и значение источника
+    void setSource(unsigned node, double value);
+
+    // Получить вектор весов решения
+    double *getV(unsigned &size) const;
 };
 
 #endif // NORMALFIELD_H

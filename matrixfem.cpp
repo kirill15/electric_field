@@ -18,9 +18,9 @@ void MatrixFEM::createArrays()
 }
 
 
-Matrix* MatrixFEM::matrix()
+Matrix &MatrixFEM::matrix()
 {
-    return &a;
+    return a;
 }
 
 

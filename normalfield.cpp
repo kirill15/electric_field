@@ -2,14 +2,35 @@
 #include "slae.h"
 
 
+
+
+
+void NormalField::getSource(unsigned &node, double &value) const
+{
+    node = sourceNode;
+    value = sourceValue;
+}
+
+void NormalField::setSource(unsigned node, double value)
+{
+    sourceNode = node;
+    sourceValue = value;
+}
+
+double *NormalField::getV(unsigned &size) const
+{
+    size = matrix->matrix().n;
+    return v;
+}
+
 double NormalField::sigma(int nvk)
 {
     return 1.0;
 }
 
-NormalField::NormalField() : grid(nullptr), matrix(nullptr)
+
+NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-10)
 {
-    eps = 1e-15;
 }
 
 void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
@@ -23,28 +44,32 @@ void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
 
     double s = sigma(nvk);
 
-    G[0][0] = s  *  ((hR * rp) / (3.0 * hZ)   +    hZ / 6.0    +   (hZ * rp) / (3.0 * hR)   +   (hR * hR) / (12.0 * hZ));
-    G[0][1] = s  *  ((hR * rp) / (6.0 * hZ)   -    hZ / 6.0    -   (hZ * rp) / (3.0 * hR)   +   (hR * hR) / (12.0 * hZ));
-    G[0][2] = s  *  (-(hR * rp) / (3.0 * hZ)   +   hZ / 12.0   +   (hZ * rp) / (6.0 * hR)   -   (hR * hR) / (12.0 * hZ));
-    G[0][3] = s  *  (-(hR * rp) / (6.0 * hZ)   -   hZ / 12.0   -   (hZ * rp) / (6.0 * hR)   -   (hR * hR) / (12.0 * hZ));
+    double hrrp_hz = hR * rp / hZ;
+    double hzrp_hr = hR * rp / hR;
+    double hrSq_hz = hR * hR / hZ;
+
+    G[0][0] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
+    G[0][1] = s  *  (hrrp_hz / 6.0   -    hZ / 6.0    -   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
+    G[0][2] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0    +   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
+    G[0][3] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0    -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
 
     G[1][0] = G[0][1];
-    G[1][1] = s  *  ((hR * rp) / (3.0 * hZ)   +   hZ / 6.0   +   (hZ * rp) / (3.0 * hR)   +   (hR * hR) / (4.0 * hZ));
-    G[1][2] = s  *  (-(hR * rp) / (6.0 * hZ)   -   hZ / 12.0   -   (hZ * rp) / (6.0 * hR)   -   (hR * hR) / (12.0 * hZ));
-    G[1][3] = s  *  (-(hR * rp) / (3.0 * hZ)   +   hZ / 12.0   +   (hZ * rp) / (6.0 * hR)   -   (hR * hR) / (4.0 * hZ));
+    G[1][1] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);
+    G[1][2] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0    -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
+    G[1][3] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0    +   hzrp_hr / 6.0   -   hrSq_hz / 4.0);
 
     G[2][0] = G[0][2];
     G[2][1] = G[1][2];
-    G[2][2] = s  *  ((hR * rp) / (3.0 * hZ)   +   hZ / 6.0   +   (hZ * rp) / (3.0 * hR)   +   (hR * hR) / (12.0 * hZ));
-    G[2][3] = s  *  ((hR * rp) / (6.0 * hZ)   -   hZ / 6.0   -   (hZ * rp) / (3.0 * hR)   +   (hR * hR) / (12.0 * hZ));
+    G[2][2] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
+    G[2][3] = s  *  (hrrp_hz / 6.0   -    hZ / 6.0    -   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
 
     G[3][0] = G[0][3];
     G[3][1] = G[1][3];
     G[3][2] = G[2][3];
-    G[3][3] = s  *  ((hR * rp) / (3.0 * hZ)   +   hZ / 6.0   +   (hZ * rp) / (3.0 * hR)   +   (hR * hR) / (4.0 * hZ));
+    G[3][3] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);;
 }
 
-void NormalField::createGlobalSLAE()
+void NormalField::createGlobalMatrix()
 {
     double G[4][4]; // Локальная матрица жесткости
 
@@ -57,7 +82,7 @@ void NormalField::createGlobalSLAE()
     matrix->createArrays();
 
     // Матрица
-    Matrix a = *(matrix->matrix());
+    Matrix a = matrix->matrix();
 
     Coord p[4]; // Узлы К.Э.
 
@@ -93,14 +118,35 @@ void NormalField::createGlobalSLAE()
         }
     }
 
-    // Правая часть
-    b = new double[a.n];
-    for (size_t i = 0; i < a.n; i++)
-        b[i] = 0.0;
+}
+
+void NormalField::createGlobalRightPart()
+{
+    size_t n = matrix->matrix().n;
+    if (f)
+        delete[] f;
+    f = new double[n];
+    for (size_t i = 0; i < n; i++)
+        f[i] = 0;
+
+    // Учитываем точесный источник
+    f[sourceNode - 1] = sourceValue;
+
+
+    cout << "f: ";
+    for (size_t i = 0; i < n; i++)
+        cout << f[i] << " ";
+    cout << endl;
 }
 
 void NormalField::solve()
 {
+    // Выделяем память под результат
+    if (v)
+        delete[] v;
+    v = new double[matrix->matrix().n];
+
+    // Решаем СЛАУ
     SLAE::solveLOS_LU(matrix->matrix(), f, v, eps);
 }
 
@@ -176,8 +222,15 @@ void NormalField::setMatrix(MatrixFEM *value)
     matrix = value;
 }
 
+double NormalField::getEps() const
+{
+    return eps;
+}
 
-
+void NormalField::setEps(double value)
+{
+    eps = value;
+}
 
 
 

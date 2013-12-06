@@ -101,7 +101,7 @@ int Grid2D::readArea(string fileWithArea)
 
     f >> l;
     areas = new int*[l];
-    for (int i = 0; i < l; i++)
+    for (size_t i = 0; i < l; i++)
     {
         areas[i] = new int[5];
         for (int j = 0; j < 5; j++)

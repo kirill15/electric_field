@@ -7,15 +7,15 @@ SLAE::SLAE()
 void SLAE::multMatrixVector(Matrix &a, double *x, double *res)
 {
     // Обнуляем вектор результата
-    for(int i = 0; i < a.n; i++)
+    for(size_t i = 0; i < a.n; i++)
         res[i] = 0.0;
 
     // Умножаем диагональ
-    for(int i = 0; i < a.n; i++)
+    for(size_t i = 0; i < a.n; i++)
         res[i] += a.di[i] * x[i];
 
     // Умножаем нижний треугольник
-    for(int i = 1; i < a.n; i++)
+    for(size_t i = 1; i < a.n; i++)
     {
         int iBegin = a.ig[i],
                 iEnd = a.ig[i+1];
@@ -24,7 +24,7 @@ void SLAE::multMatrixVector(Matrix &a, double *x, double *res)
     }
 
     // Умножаем верхний треугольник
-    for(int i = 1; i < a.n; i++)
+    for(size_t i = 1; i < a.n; i++)
     {
         int iBegin = a.ig[i],
                 iEnd = a.ig[i+1];
@@ -68,7 +68,7 @@ void SLAE::factorizeLU(Matrix &a, Matrix &lu)
            *au = new double[k],
            *di = new double[a.n];
 
-    for(int i = 0; i < a.n; i++) // Цикл по строкам (столбцам)
+    for(size_t i = 0; i < a.n; i++) // Цикл по строкам (столбцам)
     {
         int iBegin = a.ig[i],
                 iEnd = a.ig[i+1];
@@ -117,7 +117,7 @@ void SLAE::factorizeLU(Matrix &a, Matrix &lu)
 
 void SLAE::forwardStroke(Matrix &lu, double *b, double *y)
 {
-    for(int i = 0; i < lu.n; i++) // Цикл по строкам
+    for(size_t i = 0; i < lu.n; i++) // Цикл по строкам
     {
         double sum = b[i];
         int iBegin = lu.ig[i],
@@ -130,7 +130,7 @@ void SLAE::forwardStroke(Matrix &lu, double *b, double *y)
 
 void SLAE::returnStroke(Matrix &lu, double *b, double *x)
 {
-    for(int i = 0; i < lu.n; i++)
+    for(size_t i = 0; i < lu.n; i++)
         x[i] = b[i];
     for(int i = lu.n-1; i >= 0; i--) // Цикл по столбцам
     {

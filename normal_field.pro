@@ -14,7 +14,8 @@ HEADERS += \
     normalfield.h \
     grid2D.h \
     slae.h \
-    matrixfem.h
+    matrixfem.h \
+    matrix.h
 
 OTHER_FILES += \
     area.txt \
