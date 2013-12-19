@@ -26,6 +26,12 @@ private:
     // Значение sigma
     double sigma(int nvk);
 
+    // Значение Ug
+    /* rz::Coord - координата узла
+     * nk::int - номер в каталоге первого краевого условия
+     */
+    double Ug(Coord rz, int nk);
+
 
 public:
     NormalField();
@@ -52,8 +58,31 @@ public:
     // Глобальный вектор правой части
     void createGlobalRightPart();
 
+
+    // Учет первого краевого условия
+    void firstBoundaryCondition();
+
+    void firstBoundaryCondition2();
+
+
     // Решение СЛАУ
     void solve();
+
+    void printRealSolv()
+    {
+        ofstream file;
+        file.open("v_real.txt");
+        Coord *rz = grid->rz;
+        for (size_t i = 0; i < matrix->matrix().n; i++)
+        {
+            //if (rz[i].r == 0.0)
+             //   file << 1e+10 << endl;
+            //else
+            //    file << 1.0 / (2 * M_PI * rz[i].r * sigma(1)) << endl;
+            file << rz[i].r * rz[i].r + rz[i].z * rz[i].z << endl;
+        }
+        file.close();
+    }
 
 
     // Создание сетки из файлов, описывающих область и ее разбиение
@@ -97,7 +126,7 @@ public:
     void getSource(unsigned &node, double &value) const;
 
     // Задать позицию и значение источника
-    void setSource(unsigned node, double value);
+    void setSource(double value, unsigned node = 0);
 
     // Получить вектор весов решения
     double *getV(unsigned &size) const;

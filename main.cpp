@@ -1,6 +1,7 @@
 #include <iostream>
 #include "normalfield.h"
 #include "grid2D.h"
+//#include <cmath>
 
 using namespace std;
 
@@ -23,11 +24,16 @@ int main()
     u0.createGlobalMatrix();
     cout << "Глобальная СЛАУ собрана" << endl;
 
-    u0.setSource(1, 1);
+    u0.setSource(1.0 / (2.0 * M_PI));
+    //u0.setSource(0.0);
     cout << "Источник задан" << endl;
 
-    u0.createGlobalRightPart();;
+    u0.createGlobalRightPart();
     cout << "Глобальный вектор правой части создан" << endl;
+
+    u0.firstBoundaryCondition();
+    cout << "Первые краевые учтены" << endl;
+
 
     u0.getMatrix()->saveElements();
     cout << "Элементы сохранены" << endl;
@@ -39,10 +45,12 @@ int main()
     f.open("v.txt");
     size_t size;
     double *v = u0.getV(size);
-    for (int i = 0; i < size; ++i) {
+    for (uint i = 0; i < size; ++i) {
         f << v[i] << endl;
     }
     f.close();
+    //u0.printRealSolv();
+    //return 0;
 
     if (u0.getGrid()->txtToDat("../normal_field/txtToDat/txttodat") == 0)
         cout << "Сетка сохранена в бинарном виде" << endl;

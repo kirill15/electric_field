@@ -11,9 +11,14 @@ void NormalField::getSource(unsigned &node, double &value) const
     value = sourceValue;
 }
 
-void NormalField::setSource(unsigned node, double value)
+void NormalField::setSource(double value, unsigned node)
 {
-    sourceNode = node;
+    // Положение точечного источника
+    sourceNode = node ? node - 1 : matrix->matrix().n - grid->getSizeR();
+
+    cout << "sourceNode: " << sourceNode + 1 << endl;
+
+    // Его значение
     sourceValue = value;
 }
 
@@ -25,11 +30,22 @@ double *NormalField::getV(unsigned &size) const
 
 double NormalField::sigma(int nvk)
 {
-    return 1.0;
+    switch (nvk)
+    {
+    case 0: return 0.01;
+    case 1: return 0.05;
+    default: throw "Неправильная сигма!";
+    }
+
+}
+
+double NormalField::Ug(Coord rz, int nk)
+{
+    return 1.0 + rz.z;
 }
 
 
-NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-10)
+NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
 {
 }
 
@@ -45,18 +61,18 @@ void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
     double s = sigma(nvk);
 
     double hrrp_hz = hR * rp / hZ;
-    double hzrp_hr = hR * rp / hR;
+    double hzrp_hr = hZ * rp / hR;
     double hrSq_hz = hR * hR / hZ;
 
     G[0][0] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
     G[0][1] = s  *  (hrrp_hz / 6.0   -    hZ / 6.0    -   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
-    G[0][2] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0    +   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
-    G[0][3] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0    -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
+    G[0][2] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0   +   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
+    G[0][3] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0   -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
 
     G[1][0] = G[0][1];
     G[1][1] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);
-    G[1][2] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0    -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
-    G[1][3] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0    +   hzrp_hr / 6.0   -   hrSq_hz / 4.0);
+    G[1][2] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0   -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
+    G[1][3] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0   +   hzrp_hr / 6.0   -   hrSq_hz / 4.0);
 
     G[2][0] = G[0][2];
     G[2][1] = G[1][2];
@@ -66,7 +82,7 @@ void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
     G[3][0] = G[0][3];
     G[3][1] = G[1][3];
     G[3][2] = G[2][3];
-    G[3][3] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);;
+    G[3][3] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);
 }
 
 void NormalField::createGlobalMatrix()
@@ -108,12 +124,12 @@ void NormalField::createGlobalMatrix()
             //**** Тупо, да и ваще строчно-столбцовый формат хранения матрицы в данном случае не нужен ****//
             for (size_t j = i + 1; j < 4; j++) // Цикл по столбцам локальной матрицы
             {
-                unsigned positionInGgl = a.ig[nvtr[k][j]];
+                unsigned left = a.ig[nvtr[k][j]]; // Левая граница поиска
 
-                while (a.jg[positionInGgl] != column)
-                    positionInGgl++;
+                while (a.jg[left] != column)
+                    left++;
 
-                a.ggl[positionInGgl] += G[i][j];
+                a.ggl[left] += G[i][j];
             }
         }
     }
@@ -129,15 +145,75 @@ void NormalField::createGlobalRightPart()
     for (size_t i = 0; i < n; i++)
         f[i] = 0;
 
-    // Учитываем точесный источник
+    // Учитываем точечный источник
     f[sourceNode - 1] = sourceValue;
 
 
-    cout << "f: ";
-    for (size_t i = 0; i < n; i++)
-        cout << f[i] << " ";
-    cout << endl;
+//    cout << "f: ";
+//    for (size_t i = 0; i < n; i++)
+//        cout << f[i] << " ";
+//    cout << endl;
 }
+
+void NormalField::firstBoundaryCondition()
+{
+    Matrix a =  matrix->matrix();
+
+    /// Задаем однородные краевые условия снизу
+    unsigned sizeR = grid->getSizeR();
+
+    for (size_t index = 0; index < sizeR; index++)
+    {
+        a.di[index] = 1.0;
+        f[index] = 0.0;
+
+        // Обнуляем столбец выше элемента и строку левее него
+        for (size_t i = a.ig[index]; i < a.ig[index + 1]; i++)
+            a.ggl[i] = 0.0;
+
+        // Обнуляем правее и ниже
+        for (size_t i = index + 1; i < a.n; i++)
+        {
+            size_t left = a.ig[i]; // Начальное значение левой границы поиска
+            size_t right = a.ig[i + 1] - 1; // Начальное значение правой границы поиска
+
+            // Ищем нужный столбец
+            while (a.jg[left] < index && left <= right)
+                left++;
+
+            // Если в этом столбце есть элемент, то присваиваем ему значение
+            if (a.jg[left] == index)
+                a.ggl[left] = 0.0;
+        }
+    }
+
+    /// Задаем однородные краевые условия справа
+    for (size_t index = 2 * sizeR - 1; index < a.n; index += sizeR)
+    {
+        a.di[index] = 1.0;
+        f[index] = 0.0;
+
+        // Обнуляем столбец выше элемента и строку левее него
+        for (size_t i = a.ig[index]; i < a.ig[index + 1]; i++)
+            a.ggl[i] = 0.0;
+
+        // Обнуляем правее и ниже
+        for (size_t i = index + 1; i < a.n; i++)
+        {
+            size_t left = a.ig[i]; // Начальное значение левой границы поиска
+            size_t right = a.ig[i + 1] - 1; // Начальное значение правой границы поиска
+
+            // Ищем нужный столбец
+            while (a.jg[left] < index && left <= right)
+                left++;
+
+            // Если в этом столбце есть элемент, то присваиваем ему значение
+            if (a.jg[left] == index)
+                a.ggl[left] = 0.0;
+        }
+    }
+}
+
 
 void NormalField::solve()
 {
@@ -145,6 +221,10 @@ void NormalField::solve()
     if (v)
         delete[] v;
     v = new double[matrix->matrix().n];
+
+    // Начальное приближение:
+    for (size_t i = 0; i < matrix->matrix().n; i++)
+        v[i] = 0.159;
 
     // Решаем СЛАУ
     SLAE::solveLOS_LU(matrix->matrix(), f, v, eps);

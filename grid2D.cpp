@@ -1,6 +1,18 @@
 #include "grid2D.h"
 
 
+
+unsigned Grid2D::getSizeR() const
+{
+    return sizeR;
+}
+
+unsigned Grid2D::getSizeZ() const
+{
+    return sizeZ;
+}
+
+
 void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
 {
     // Количество узлов
@@ -141,6 +153,8 @@ int Grid2D::readPartitions(string fileWithGrid)
     for (int i = nZW; i > 1; i--)
     {
         f >> numberOfIntervals >> coefOfDisc;
+        if (coefOfDisc < 0)
+            coefOfDisc = -1.0 / coefOfDisc;
         partitionsZ.push_back(pair<int, double>(numberOfIntervals, coefOfDisc));
     }
 
@@ -152,8 +166,8 @@ int Grid2D::readPartitions(string fileWithGrid)
 
 void Grid2D::createGrid()
 {
-    long sizeR = 1;
-    long sizeZ = 1;
+    sizeR = 1;
+    sizeZ = 1;
 
     // Размер массива r
     for (size_t i = 0; i < partitionsR.size(); i++)
@@ -200,7 +214,7 @@ void Grid2D::createGrid()
     for (size_t partNum = 0; partNum < partitionsZ.size(); partNum++)
     {
         // Левая граница
-        size_t tmp = partitionsR.size() * partNum;
+        size_t tmp = (partitionsR.size() - 1) * partNum;
         double zLow = zw[areas[tmp + partNum][3]];
 
         // Правая граница

@@ -71,7 +71,7 @@ void SLAE::factorizeLU(Matrix &a, Matrix &lu)
     for(size_t i = 0; i < a.n; i++) // Цикл по строкам (столбцам)
     {
         int iBegin = a.ig[i],
-                iEnd = a.ig[i+1];
+            iEnd = a.ig[i+1];
         double sumDi = 0.0;
 
         for(int j = iBegin; j < iEnd; j++) // Цикл по элементам строки

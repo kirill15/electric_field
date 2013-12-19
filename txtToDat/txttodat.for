@@ -4,6 +4,7 @@
         
         dimension n(4)
         real*8 r, z
+        real*8 f
 
         path = './for_telma/'
         
@@ -26,7 +27,8 @@
         read(2, *) ktr
         do i = 1, ktr
           read(2, *) (n(j), j = 1, 4)
-          write(3, rec = i) (n(j),j=1, 4), m0, m1
+*          write(3, rec = i) (n(j),j=1, 4), m0, m1
+          write(3, rec = i) n(3), n(4), n(1), n(2), m0, m1
         enddo
         close(2)
         close(3)
@@ -55,8 +57,8 @@
         open(2, file = 'v.txt');
         open(3, file = path//'v2.dat', access = 'direct', recl=8)
         do i = 1, kuzlov
-          read(2, *) v
-          write(3, rec = i) v
+          read(2, *) f
+          write(3, rec = i) f
         enddo
         close(2)
         close(3)

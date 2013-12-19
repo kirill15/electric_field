@@ -19,5 +19,6 @@ HEADERS += \
 
 OTHER_FILES += \
     area.txt \
-    grid.txt
+    grid.txt \
+    ku1.txt
 

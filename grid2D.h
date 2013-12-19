@@ -37,6 +37,9 @@ private:
     uint countPoints; // Количество узлов
     uint countFE; // Количество КЭ
 
+    unsigned sizeR; // Количество узлов по оси r
+    unsigned sizeZ; // Количество узлов по оси z
+
 public:
     // Массивы, описывающие КЭ:
     Coord *rz; // Координаты узлов
@@ -122,6 +125,12 @@ public:
 
     // Возвращает количество К.Э.
     unsigned getCountFE() const;
+
+    // Возвращает количество узлов по оси r
+    unsigned getSizeR() const;
+
+    // Возвращает количество узлов по оси z
+    unsigned getSizeZ() const;
 };
 
 
