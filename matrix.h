@@ -1,6 +1,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+
 // Матрица в разреженном строчном формате
 /* Индексы с 0! */
 struct Matrix

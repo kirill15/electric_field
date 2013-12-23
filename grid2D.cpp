@@ -132,7 +132,7 @@ int Grid2D::readArea(string fileWithArea)
 
 int Grid2D::readPartitions(string fileWithGrid)
 {
-    int numberOfIntervals; // Число подыитервалов
+    int numberOfIntervals; // Число подъитервалов
     double coefOfDisc; // Коэффициент разрядки
 
     ifstream f(fileWithGrid.c_str());

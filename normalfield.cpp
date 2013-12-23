@@ -28,15 +28,45 @@ double *NormalField::getV(unsigned &size) const
     return v;
 }
 
-double NormalField::sigma(int nvk)
+int NormalField::readSigma(string fileWithSigma)
 {
-    switch (nvk)
+    ifstream file(fileWithSigma.c_str());
+    if (!file.is_open())
     {
-    case 0: return 0.01;
-    case 1: return 0.05;
-    default: throw "Неправильная сигма!";
+        cerr << "Error with opening sigma.txt";
+        return -1;
     }
 
+    int n, num;
+    double val;
+    file >> n;
+
+    sigmas = new double[n];
+
+    for (int i = 0; i < n; i++)
+    {
+        file >> num >> val;
+        sigmas[num - 1] = val;
+    }
+
+    file.close();
+
+    return 0;
+}
+
+double NormalField::sigma(int nvk)
+{
+    return sigmas[nvk];
+
+    /*
+    switch (nvk)
+    {
+    case 0: return 0.04;
+    case 1: return 0.005;
+    case 2: return 0.0005;
+    default: throw "Неправильная сигма!";
+    }
+    */
 }
 
 double NormalField::Ug(Coord rz, int nk)
@@ -45,7 +75,7 @@ double NormalField::Ug(Coord rz, int nk)
 }
 
 
-NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
+NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-30)
 {
 }
 
@@ -146,13 +176,7 @@ void NormalField::createGlobalRightPart()
         f[i] = 0;
 
     // Учитываем точечный источник
-    f[sourceNode - 1] = sourceValue;
-
-
-//    cout << "f: ";
-//    for (size_t i = 0; i < n; i++)
-//        cout << f[i] << " ";
-//    cout << endl;
+    f[sourceNode] = sourceValue;
 }
 
 void NormalField::firstBoundaryCondition()
@@ -217,6 +241,35 @@ void NormalField::firstBoundaryCondition()
 
 void NormalField::solve()
 {
+
+/*
+
+    Matrix l;
+    SLAE::factorizeLLT(matrix->matrix(), l);
+
+    ofstream file;
+    file.open("ggl.txt");
+
+    for (size_t i = 0; i < l.ig[l.n]; i++)
+        file << l.ggl[i] << endl;
+    file.close();
+
+    file.open("ggu.txt");
+    for (size_t i = 0; i < l.ig[l.n]; i++)
+        file << l.ggu[i] << endl;
+    file.close();
+
+    file.open("di.txt");
+    for (size_t i = 0; i < l.n; i++)
+        file << l.di[i] << endl;
+    file.close();
+
+    exit(0);
+*/
+
+
+
+
     // Выделяем память под результат
     if (v)
         delete[] v;
@@ -224,10 +277,22 @@ void NormalField::solve()
 
     // Начальное приближение:
     for (size_t i = 0; i < matrix->matrix().n; i++)
-        v[i] = 0.159;
+        v[i] = 0;
 
     // Решаем СЛАУ
-    SLAE::solveLOS_LU(matrix->matrix(), f, v, eps);
+    SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, 15000);
+
+    matrix->saveElements();
+}
+
+void NormalField::saveSolve()
+{
+    ofstream f;
+    f.open("v.txt");
+    size_t n = matrix->matrix().n;
+    for (uint i = 0; i < n; i++)
+        f << v[i] << endl;
+    f.close();
 }
 
 

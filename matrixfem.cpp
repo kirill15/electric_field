@@ -38,13 +38,13 @@ void MatrixFEM::generatePortrait(Grid2D *grid, unsigned sizeOfElement)
     {
         uint *tmp = grid->nvtr[i];
 
-        // Для каждого узла текущего элемена...
+        // Для каждого узла текущего элемента...
         for (size_t j = 0; j < sizeOfElement; j++)
         {
             // ...добавляем в список смежные с ним узлы
             for (size_t k = 0; k < sizeOfElement; k++)
             {
-                // Добавляем только те узлы, глобальных номер которых больше текущего
+                // Добавляем только те узлы, глобальный номер которых больше текущего
                 if (tmp[k] < tmp[j])
                     list[tmp[j]].insert(tmp[k]);
             }

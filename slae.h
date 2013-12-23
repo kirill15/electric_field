@@ -7,6 +7,9 @@
 
 #include <iostream>
 #include "matrix.h"
+#include <cmath>
+
+
 
 using namespace std;
 
@@ -14,11 +17,12 @@ using namespace std;
 class SLAE
 {
 private:
-
-
-public:
     SLAE();
 
+    // Обновление вектора невязки
+    static void refreshRk(Matrix &a, double *f, double *x, double *r);
+
+public:
     // Умножение матрицы на вектор
     static void multMatrixVector(Matrix &a, double *x, double *res);
 
@@ -37,6 +41,9 @@ public:
 
     // Неполная LU-факторизация матрицы
     static void factorizeLU(Matrix &a, Matrix &lu);
+
+    // Неполная LL^T-факторизация матрицы
+    static void factorizeLLT(Matrix &a, Matrix &l);
 
 
     // Прямой ход (Ly=b)

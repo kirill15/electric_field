@@ -4,6 +4,12 @@ SLAE::SLAE()
 {
 }
 
+void SLAE::refreshRk(Matrix &a, double *f, double *x, double *r)
+{
+    multMatrixVector(a, x, r);		// r = Ax
+    subVectorVector(f, r, a.n, r);	// r = f - Ax
+}
+
 void SLAE::multMatrixVector(Matrix &a, double *x, double *res)
 {
     // Обнуляем вектор результата
@@ -18,7 +24,7 @@ void SLAE::multMatrixVector(Matrix &a, double *x, double *res)
     for(size_t i = 1; i < a.n; i++)
     {
         int iBegin = a.ig[i],
-                iEnd = a.ig[i+1];
+            iEnd = a.ig[i+1];
         for(int j = iBegin; j < iEnd; j++)
             res[i] += a.ggl[j] * x[a.jg[j]];
     }
@@ -114,6 +120,57 @@ void SLAE::factorizeLU(Matrix &a, Matrix &lu)
     lu.ggu = au;
 }
 
+void SLAE::factorizeLLT(Matrix &a, Matrix &l)
+{
+    double *al = new double[a.ig[a.n]],
+           *di = new double[a.n];
+
+    for (size_t i = 0; i < a.n; i++) // Цикл по строкам
+    {
+        size_t iBegin = a.ig[i]; // Индекс первого элемента в строке i
+        size_t iEnd = a.ig[i + 1];
+
+        double sumDi = 0.0;
+
+        for (size_t j = iBegin; j < iEnd; j++) // Цикл по элементам строки
+        {
+            size_t column = a.jg[j]; // Столбец текущего элемента
+
+            size_t jBegin = a.ig[column]; // Индекс первого элемента в строке j
+            size_t jEnd = a.ig[column + 1];
+
+            double sum = 0.0;
+
+            // Скалярное произведение Lik*Ljk
+            size_t ii = iBegin;
+            size_t jj = jBegin;
+            while (ii < j && jj < jEnd && jj < j)
+            {
+                if (a.jg[ii] > a.jg[jj])
+                    jj++;
+                else if (a.jg[ii] < a.jg[jj])
+                    ii++;
+                else
+                {
+                 //   cout << "jg[ii]=jg[jj]: " << a.jg[ii] << endl;
+                    sum += al[ii++] * al[jj++];
+                }
+            }
+
+            al[j] = (a.ggl[j] - sum) / di[column];
+           // cout << sum << endl;
+
+            sumDi += al[j] * al[j];
+        }
+
+        di[i] = sqrt(a.di[i] - sumDi);
+    }
+
+    l = Matrix(a);
+    l.ggl = l.ggu = al;
+    l.di = di;
+}
+
 
 void SLAE::forwardStroke(Matrix &lu, double *b, double *y)
 {
@@ -174,6 +231,8 @@ int SLAE::solveLOS_LU(Matrix &a, double *f, double *x, double eps, int maxIter)
 {
     Matrix lu;						// Факторизованная матрица
     factorizeLU(a, lu);
+    //factorizeLLT(a, lu);
+
     double *r = new double[a.n];	// *
     multMatrixVector(a, x, r);		// r = Ax
     subVectorVector(f, r, a.n, r);	// r = f - Ax
@@ -188,19 +247,26 @@ int SLAE::solveLOS_LU(Matrix &a, double *f, double *x, double eps, int maxIter)
 
     iterationLU(a, lu, x, r, z, p);	// Первая итерация
     double residualSqr = scalarProduct(r, r, a.n);	// Квадрат нормы невязки (r(i), r(i))
+
+    double residualSqr0 = residualSqr;
+
     cout << "#1:\t\t" << residualSqr << endl;
 
     int i;
     for(i = 2; i <= maxIter && residualSqr > eps; i++)
     {
         residualSqr -= iterationLU(a, lu, x, r, z, p);	// Квадрат нормы невязки (r(i), r(i)) = (r(i-1), r(i-1)) - alpha^2 * (p(i-1), p(i-1))
+
+        residualSqr = scalarProduct(r, r, a.n);	// Квадрат нормы невязки (r(i), r(i))
+        residualSqr /= residualSqr0;
+
         cout << "#" << i << ":\t\t" << residualSqr << endl;
     }
 
     // Освобождаем память
     delete lu.di;
     delete lu.ggl;
-    delete lu.ggu;
+    //delete lu.ggu;
     delete r;
     delete z;
     delete p;

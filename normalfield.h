@@ -14,6 +14,8 @@ private:
 
     MatrixFEM *matrix; // Конечноэлементная матрица
 
+    double *sigmas; // Массив значений сигм
+
     double *f; // Правая часть
 
     double *v; // Вектор весов (решение СЛАУ)
@@ -22,6 +24,7 @@ private:
 
     unsigned sourceNode; // Номер узла точечного источника
     double sourceValue; // Значение плотности источника
+
 
     // Значение sigma
     double sigma(int nvk);
@@ -45,6 +48,10 @@ public:
     }
 
 
+    // Считывание значений сигмы на слоях из файла
+    int readSigma(string fileWithSigma);
+
+
     // Локальная матрица жесткости
     /* p :: Coord[] - координаты вершин конечного элемента
      * nvk :: int - номер в каталоге
@@ -66,20 +73,21 @@ public:
 
 
     // Решение СЛАУ
+    /* Начальное приближение задается внутри (НЕ ОЧЕНЬ) */
     void solve();
+
+    // Сохранить решение СЛАУ
+    void saveSolve();
+
 
     void printRealSolv()
     {
         ofstream file;
         file.open("v_real.txt");
         Coord *rz = grid->rz;
-        for (size_t i = 0; i < matrix->matrix().n; i++)
+        for (size_t i = matrix->matrix().n - 2 * grid->getSizeR(); i < matrix->matrix().n - grid->getSizeR(); i++)
         {
-            //if (rz[i].r == 0.0)
-             //   file << 1e+10 << endl;
-            //else
-            //    file << 1.0 / (2 * M_PI * rz[i].r * sigma(1)) << endl;
-            file << rz[i].r * rz[i].r + rz[i].z * rz[i].z << endl;
+            file << 1.0 / (2.0 * M_PI * rz[i].r * sigma(0)) << "\t" << v[i] << endl;
         }
         file.close();
     }
