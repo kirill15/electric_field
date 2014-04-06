@@ -7,9 +7,6 @@
 class NormalField
 {
 private:
-    unsigned int countPoints; // Количество узлов
-    unsigned int countFE; // Количество КЭ
-
     Grid2D *grid; // Расчетная сетка
 
     MatrixFEM *matrix; // Конечноэлементная матрица
@@ -80,19 +77,6 @@ public:
     void saveSolve();
 
 
-    void printRealSolv()
-    {
-        ofstream file;
-        file.open("v_real.txt");
-        Coord *rz = grid->rz;
-        for (size_t i = matrix->matrix().n - 2 * grid->getSizeR(); i < matrix->matrix().n - grid->getSizeR(); i++)
-        {
-            file << 1.0 / (2.0 * M_PI * rz[i].r * sigma(0)) << "\t" << v[i] << endl;
-        }
-        file.close();
-    }
-
-
     // Создание сетки из файлов, описывающих область и ее разбиение
     int createGrid(string fileWithArea, string fileWithGrid);
 
@@ -138,6 +122,9 @@ public:
 
     // Получить вектор весов решения
     double *getV(unsigned &size) const;
+
+    // Получить количество КЭ
+    unsigned int getCountFE() const;
 };
 
 #endif // NORMALFIELD_H

@@ -66,6 +66,14 @@ double SLAE::scalarProduct(const double *a, const double *b, int size)
     return res;
 }
 
+double SLAE::norm(const double *a, int size)
+{
+    double sum = 0.0;
+    for (int i = 0; i < size; i++)
+        sum += a[i] * a[i];
+    return sqrt(sum);
+}
+
 
 void SLAE::factorizeLU(Matrix &a, Matrix &lu)
 {
@@ -151,14 +159,10 @@ void SLAE::factorizeLLT(Matrix &a, Matrix &l)
                 else if (a.jg[ii] < a.jg[jj])
                     ii++;
                 else
-                {
-                 //   cout << "jg[ii]=jg[jj]: " << a.jg[ii] << endl;
                     sum += al[ii++] * al[jj++];
-                }
             }
 
             al[j] = (a.ggl[j] - sum) / di[column];
-           // cout << sum << endl;
 
             sumDi += al[j] * al[j];
         }
@@ -199,6 +203,40 @@ void SLAE::returnStroke(Matrix &lu, double *b, double *x)
     }
 }
 
+
+void SLAE::forwardStrokeLLT(Matrix &l, double *b, double *y)
+{
+    for(size_t i = 0; i < l.n; i++) // Цикл по строкам
+    {
+        double sum = b[i];
+        int iBegin = l.ig[i],
+            iEnd = l.ig[i+1];
+        for(int j = iBegin; j < iEnd; j++)
+            sum -= l.ggl[j] * y[l.jg[j]];
+        y[i] = sum / l.di[i];
+    }
+}
+
+
+void SLAE::returnStrokeLLT(Matrix &l, double *b, double *x)
+{
+    for(size_t i = 0; i < l.n; i++)
+        x[i] = b[i];
+    for(int i = l.n-1; i >= 0; i--) // Цикл по столбцам
+    {
+        x[i] /= l.di[i];
+
+        int iBegin = l.ig[i],
+            iEnd = l.ig[i+1];
+
+        for(int j = iBegin; j < iEnd; j++)
+        {
+            x[l.jg[j]] -= l.ggl[j] * x[i];
+        }
+    }
+}
+
+
 double SLAE::iterationLU(Matrix &a, Matrix &lu, double *x, double *r, double *z, double *p)
 {
     double pSqr = scalarProduct(p, p, a.n);					// (p(k-1), p(k-1))
@@ -226,6 +264,50 @@ double SLAE::iterationLU(Matrix &a, Matrix &lu, double *x, double *r, double *z,
 
     return alpha * alpha * pSqr;							// Возвращаем произведение alpha^2 * (p(k-1), p(k-1))
 }
+
+
+void SLAE::iterationMSGLLT(Matrix &a, Matrix &l, double *x, double *r, double *z)
+{
+    static double *temp1 = new double[a.n],
+                  *temp2 = new double[a.n];
+
+    // M^-1 * r(k-1)
+    forwardStrokeLLT(l, r, temp1);
+    returnStrokeLLT(l, temp1, temp2);
+
+    // (M^-1 * r(k-1), r(k-1))
+    double Mrr = scalarProduct(temp2, r, a.n);
+
+    // A * z(k-1)
+    multMatrixVector(a, z, temp1);
+
+    // (A * z(k-1), z(k-1))
+    double Azz = scalarProduct(temp1, z, a.n);
+
+    double alpha = Mrr / Azz;
+
+    // x(k) = x(k-1) + alpha*z(k-1)
+    multVectorScalar(z, alpha, a.n, temp2);
+    addVectorVector(x, temp2, a.n, x);
+
+    // r(k) = r(k-1) - alpha*Az(k-1)
+    multVectorScalar(temp1, alpha, a.n, temp2);
+    subVectorVector(r, temp2, a.n, r);
+
+    // M^-1 * r(k)
+    forwardStrokeLLT(l, r, temp1);
+    returnStrokeLLT(l, temp1, temp2);
+
+    // (M^-1 * r(k), r(k))
+    double MrrNew = scalarProduct(temp2, r, a.n);
+
+    double beta = MrrNew / Mrr;
+
+    // z(k) = M^-1*r(k) + beta*z(k-1)
+    multVectorScalar(z, beta, a.n, temp1);
+    addVectorVector(temp2, temp1, a.n, z);
+}
+
 
 int SLAE::solveLOS_LU(Matrix &a, double *f, double *x, double eps, int maxIter)
 {
@@ -275,7 +357,43 @@ int SLAE::solveLOS_LU(Matrix &a, double *f, double *x, double eps, int maxIter)
 }
 
 
+int SLAE::solveMSG_LLT(Matrix &a, double *f, double *x, double eps, int maxIter)
+{
+    Matrix l;						// Факторизованная матрица
+    factorizeLLT(a, l);
 
+    double *r = new double[a.n];	// *
+    multMatrixVector(a, x, r);		// r = Ax
+    subVectorVector(f, r, a.n, r);	// r = f - Ax
+
+    double *z = new double[a.n];	// *
+    forwardStrokeLLT(l, r, z);      // *
+    returnStrokeLLT(l, z, z);		// z = M^-1 * r
+
+    iterationMSGLLT(a, l, x, r, z);	// Первая итерация
+
+    double residual = norm(r, a.n) / norm(f, a.n);
+
+    cout << "#1:\t\t" << residual << endl;
+
+    int i;
+    for(i = 2; i <= maxIter && residual > eps; i++)
+    {
+        iterationMSGLLT(a, l, x, r, z);
+
+        residual = norm(r, a.n) / norm(f, a.n);
+
+        cout << "#" << i << ":\t\t" << residual << endl;
+    }
+
+    // Освобождаем память
+    delete l.di;
+    delete l.ggl;
+    delete r;
+    delete z;
+
+    return i - 1;	// Возвращаем число итераций
+}
 
 
 

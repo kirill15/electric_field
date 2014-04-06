@@ -2,7 +2,9 @@
 #include "slae.h"
 
 
-
+NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-30)
+{
+}
 
 
 void NormalField::getSource(unsigned &node, double &value) const
@@ -54,30 +56,13 @@ int NormalField::readSigma(string fileWithSigma)
     return 0;
 }
 
-double NormalField::sigma(int nvk)
-{
-    return sigmas[nvk];
 
-    /*
-    switch (nvk)
-    {
-    case 0: return 0.04;
-    case 1: return 0.005;
-    case 2: return 0.0005;
-    default: throw "Неправильная сигма!";
-    }
-    */
-}
-
-double NormalField::Ug(Coord rz, int nk)
+unsigned int NormalField::getCountFE() const
 {
-    return 1.0 + rz.z;
+    return grid->getCountFE();
 }
 
 
-NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-30)
-{
-}
 
 void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
 {
@@ -88,7 +73,7 @@ void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
     double hR = p[1].r - p[0].r;
     double hZ = p[2].z - p[0].z;
 
-    double s = sigma(nvk);
+    double s = sigmas[nvk];
 
     double hrrp_hz = hR * rp / hZ;
     double hzrp_hr = hZ * rp / hR;
@@ -99,19 +84,13 @@ void NormalField::createLocalG(const Coord p[], int nvk, double G[4][4])
     G[0][2] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0   +   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
     G[0][3] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0   -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
 
-    G[1][0] = G[0][1];
     G[1][1] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);
     G[1][2] = s  *  (-hrrp_hz / 6.0  -    hZ / 12.0   -   hzrp_hr / 6.0   -   hrSq_hz / 12.0);
     G[1][3] = s  *  (-hrrp_hz / 3.0  +    hZ / 12.0   +   hzrp_hr / 6.0   -   hrSq_hz / 4.0);
 
-    G[2][0] = G[0][2];
-    G[2][1] = G[1][2];
     G[2][2] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
     G[2][3] = s  *  (hrrp_hz / 6.0   -    hZ / 6.0    -   hzrp_hr / 3.0   +   hrSq_hz / 12.0);
 
-    G[3][0] = G[0][3];
-    G[3][1] = G[1][3];
-    G[3][2] = G[2][3];
     G[3][3] = s  *  (hrrp_hz / 3.0   +    hZ / 6.0    +   hzrp_hr / 3.0   +   hrSq_hz / 4.0);
 }
 
@@ -129,6 +108,9 @@ void NormalField::createGlobalMatrix()
 
     // Матрица
     Matrix a = matrix->matrix();
+
+    // Количество узлов К.Э.
+    unsigned countFE = grid->getCountFE();
 
     Coord p[4]; // Узлы К.Э.
 
@@ -163,7 +145,6 @@ void NormalField::createGlobalMatrix()
             }
         }
     }
-
 }
 
 void NormalField::createGlobalRightPart()
@@ -241,46 +222,18 @@ void NormalField::firstBoundaryCondition()
 
 void NormalField::solve()
 {
-
-/*
-
-    Matrix l;
-    SLAE::factorizeLLT(matrix->matrix(), l);
-
-    ofstream file;
-    file.open("ggl.txt");
-
-    for (size_t i = 0; i < l.ig[l.n]; i++)
-        file << l.ggl[i] << endl;
-    file.close();
-
-    file.open("ggu.txt");
-    for (size_t i = 0; i < l.ig[l.n]; i++)
-        file << l.ggu[i] << endl;
-    file.close();
-
-    file.open("di.txt");
-    for (size_t i = 0; i < l.n; i++)
-        file << l.di[i] << endl;
-    file.close();
-
-    exit(0);
-*/
-
-
-
-
     // Выделяем память под результат
     if (v)
         delete[] v;
     v = new double[matrix->matrix().n];
 
-    // Начальное приближение:
+    // Начальное приближение
     for (size_t i = 0; i < matrix->matrix().n; i++)
-        v[i] = 0;
+        v[i] = 0.0001;
 
     // Решаем СЛАУ
-    SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, 15000);
+    //SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, 15000);
+    SLAE::solveMSG_LLT(matrix->matrix(), f, v, eps, 1000);
 
     matrix->saveElements();
 }
@@ -319,10 +272,6 @@ int NormalField::createGrid(string fileWithArea, string fileWithGrid)
 
     // Создаем сетку
     grid->createGrid();
-
-    // Сохраняем количество узлов и К.Э. (************ ЗАЧЕМ? ***********)
-    countPoints = grid->getCountPoints();
-    countFE = grid->getCountFE();
 
     return 0;
 }

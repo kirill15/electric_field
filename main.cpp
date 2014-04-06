@@ -26,6 +26,7 @@ void test(double *v, Coord *rz, size_t size)
     file.close();
 }
 
+
 int main()
 {
     NormalField u0;
@@ -48,8 +49,8 @@ int main()
     u0.createGlobalMatrix();
     cout << "Глобальная СЛАУ собрана" << endl;
 
-    u0.setSource(1.0 / (2.0 * M_PI));
-    //u0.setSource(1.0);
+    //u0.setSource(1.0 / (2.0 * M_PI));
+    u0.setSource(10);
     cout << "Источник задан" << endl;
 
     u0.createGlobalRightPart();
@@ -67,12 +68,14 @@ int main()
     u0.saveSolve();
     cout << "Решене сохранено" << endl;
 
-
+/*
     unsigned size;
     double *v = u0.getV(size);
     test(v, u0.getGrid()->rz, size);
     cout << "Сравнение с точным напечатано" << endl;
+*/
 
+    cout << u0.getCountFE() << " конечных элементов." << endl;
 
     if (u0.getGrid()->txtToDat("../normal_field/txtToDat/txttodat") == 0)
     {
@@ -84,8 +87,6 @@ int main()
         if (c == 'y' or c == 'Y')
             system("cd for_telma && wineconsole go.bat");
     }
-
-
 
 /*
     size_t size;
