@@ -313,7 +313,6 @@ int SLAE::solveLOS_LU(Matrix &a, double *f, double *x, double eps, int maxIter)
 {
     Matrix lu;						// Факторизованная матрица
     factorizeLU(a, lu);
-    //factorizeLLT(a, lu);
 
     double *r = new double[a.n];	// *
     multMatrixVector(a, x, r);		// r = Ax

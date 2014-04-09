@@ -2,6 +2,8 @@
 #include "normalfield.h"
 #include "grid2D.h"
 #include <iomanip>
+#include "anomalousfield.h"
+#include "grid3D.h"
 
 using namespace std;
 
@@ -29,6 +31,7 @@ void test(double *v, Coord *rz, size_t size)
 
 int main()
 {
+    /*
     NormalField u0;
 
     if (u0.createGrid("../normal_field/area.txt", "../normal_field/grid.txt") == 0)
@@ -49,8 +52,7 @@ int main()
     u0.createGlobalMatrix();
     cout << "Глобальная СЛАУ собрана" << endl;
 
-    //u0.setSource(1.0 / (2.0 * M_PI));
-    u0.setSource(10);
+    u0.setSource(1.0 / (2.0 * M_PI));
     cout << "Источник задан" << endl;
 
     u0.createGlobalRightPart();
@@ -68,12 +70,9 @@ int main()
     u0.saveSolve();
     cout << "Решене сохранено" << endl;
 
-/*
-    unsigned size;
-    double *v = u0.getV(size);
-    test(v, u0.getGrid()->rz, size);
-    cout << "Сравнение с точным напечатано" << endl;
-*/
+    cout << u0.getValue(Coord(10, -10)) << endl;
+
+
 
     cout << u0.getCountFE() << " конечных элементов." << endl;
 
@@ -87,14 +86,19 @@ int main()
         if (c == 'y' or c == 'Y')
             system("cd for_telma && wineconsole go.bat");
     }
-
-/*
-    size_t size;
-    double *v = u0.getV(size);
-    cout << "\nРешение:" << endl;
-    for (size_t i = 0; i < size; i++)
-        cout << v[i] << endl;
 */
+
+
+
+
+
+
+
+    Grid3D grid;
+
+    cout << grid.readArea("../normal_field/area3D.txt");
+    cout << grid.readPartitions("../normal_field/grid3D.txt");
+    grid.createGrid();
 
 
     return 0;
@@ -131,3 +135,11 @@ return 0;
 */
 
 
+
+
+/*
+    unsigned size;
+    double *v = u0.getV(size);
+    test(v, u0.getGrid()->rz, size);
+    cout << "Сравнение с точным напечатано" << endl;
+*/

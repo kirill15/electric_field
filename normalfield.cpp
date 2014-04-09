@@ -103,7 +103,7 @@ void NormalField::createGlobalMatrix()
     unsigned **nvtr = grid->nvtr;
     unsigned *nvkat = grid->nvkat;
 
-    // Выделяем память для элементов матрицы
+    // Выделяем память для элементов матрицы (Там же они и обнуляются)
     matrix->createArrays();
 
     // Матрица
@@ -288,6 +288,39 @@ void NormalField::createPortrait()
 }
 
 
+
+
+double NormalField::getValue(Coord rz)
+{
+    Coord *coords = grid->rz;
+    size_t sizeX = grid->getSizeR();
+    size_t sizeY = grid->getSizeZ();
+
+    if (rz.r < coords[0].r || rz.r > coords[sizeX - 1].r || rz.z < coords[0].z || rz.z > coords[sizeX * sizeY - 1].z)
+        throw "Point does not lie in the field of";
+
+    // Получаем номера координатных линий
+    size_t p, s, i; /* p - индекс координаты по Х, s - по Y, i - номер узла (на левой границе) */
+    for (p = 0; p < sizeX && rz.r > coords[p].r; p++);
+    for (i = 0, s = 0; s < sizeY && rz.z > coords[i].z; i += sizeX, s++);
+
+    // Получаем глобальные номера базисных функций
+    size_t k[4];
+    k[1] = (s - 1) * sizeX + p;
+    k[0] = k[1] - 1;
+    k[3] = s * sizeX + p;
+    k[2] = k[3] - 1;
+
+    // Считаем значения базисных функций на КЭ
+    double h = coords[p].r - coords[p - 1].r;
+    double R1 = (coords[p].r - rz.r) / h;
+    double R2 = (rz.r - coords[p - 1].r) / h;
+    h = coords[i].z - coords[i - 1].z;
+    double Z1 = (coords[i].z - rz.z) / h;
+    double Z2 = (rz.z - coords[i - 1].z) / h;
+
+    return v[k[0]] * R1*Z1  +  v[k[1]] * R2*Z1  +  v[k[2]] * R1*Z2  +  v[k[3]] * R2*Z2;
+}
 
 
 Grid2D *NormalField::getGrid()

@@ -62,7 +62,7 @@ void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
             {
                 for (int j = 0; j < partitionsR[iR].first; j++)             // Проход по всем интервалам по оси R
                 {
-                    nvkat[k++] = areas[partitionsR.size() * iZ + iR][0];
+                    nvkat[k++] = areas[partitionsR.size() * iZ + iR][0];    // Только для горизонтально слоистой расчетной среды
                 }
             }
         }

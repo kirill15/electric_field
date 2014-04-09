@@ -22,9 +22,9 @@ private:
     unsigned sourceNode; // Номер узла точечного источника
     double sourceValue; // Значение плотности источника
 
-
+/*
     // Значение sigma
-    double sigma(int nvk);
+    double sigma(int nvk);*/
 
     // Значение Ug
     /* rz::Coord - координата узла
@@ -92,7 +92,8 @@ public:
     int createPortrait(string ig, string jg);
 
 
-
+    // Получить решение в точке
+    double getValue(Coord rz);
 
 
     // Получить сетку
