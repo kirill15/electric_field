@@ -29,6 +29,8 @@ void MatrixFEM::generatePortrait(Grid2D *grid, unsigned sizeOfElement)
     // Размерность матрицы
     a.n = grid->getCountPoints();
 
+    uint **nvtr = grid->getNvtr();
+
     // Создание списка смежности для каждой вершины
     set<unsigned> *list = new set<unsigned>[a.n];
 
@@ -36,7 +38,7 @@ void MatrixFEM::generatePortrait(Grid2D *grid, unsigned sizeOfElement)
     size_t countFE = grid->getCountFE();
     for (size_t i = 0; i < countFE; i++)
     {
-        uint *tmp = grid->nvtr[i];
+        uint *tmp = nvtr[i];
 
         // Для каждого узла текущего элемента...
         for (size_t j = 0; j < sizeOfElement; j++)

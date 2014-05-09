@@ -2,7 +2,7 @@
 #include "slae.h"
 
 
-NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-30)
+NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
 {
 }
 
@@ -133,7 +133,6 @@ void NormalField::createGlobalMatrix()
             // Искомый номер столбца
             unsigned column = nvtr[k][i];
 
-            //**** Тупо, да и ваще строчно-столбцовый формат хранения матрицы в данном случае не нужен ****//
             for (size_t j = i + 1; j < 4; j++) // Цикл по столбцам локальной матрицы
             {
                 unsigned left = a.ig[nvtr[k][j]]; // Левая граница поиска

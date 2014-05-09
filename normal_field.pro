@@ -24,8 +24,8 @@ HEADERS += \
 OTHER_FILES += \
     area.txt \
     grid.txt \
-    ku1.txt \
     sigma.txt \
     area3D.txt \
-    grid3D.txt
+    grid3D.txt \
+    sigma3D.txt
 

@@ -7,6 +7,8 @@
 
 using namespace std;
 
+
+// Сравнение решения с точным (для двумерной области)
 void test(double *v, Coord *rz, size_t size)
 {
     double sigma = 0.01;
@@ -93,46 +95,38 @@ int main()
 
 
 
-
+/*
     Grid3D grid;
-
-    cout << grid.readArea("../normal_field/area3D.txt");
-    cout << grid.readPartitions("../normal_field/grid3D.txt");
+    cout << grid.readArea("../normal_field/area3D.txt") << endl;
+    cout << grid.readPartitions("../normal_field/grid3D.txt") << endl;
     grid.createGrid();
+    grid.saveGrid();
 
+    MatrixFEM matrix;
+    matrix.generatePortrait(&grid, 8);
+    matrix.savePortrait();
+*/
+
+    AnomalousField u;
+    u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt");
+    u.getGrid()->saveGrid();
+    u.createPortrait();
+    u.getMatrix()->savePortrait();
+    u.readSigma("../normal_field/sigma3D.txt");
+    u.createGlobalSLAE();
+    u.getMatrix()->saveElements();
+    u.firstBoundaryCondition();
+    u.setEps(1e-45);
+    u.solve();
+    double *x;
+    size_t size;
+    x = u.getV(size);
+    cout << "x:\n";
+    for (size_t i = 0; i < size; i++)
+        cout << i + 1 << ":\t" << x[i] << endl;
 
     return 0;
 }
-
-
-/*
-Matrix a;
-Matrix l;
-
-a.n = 4;
-
-a.ig = new size_t[5];
-a.ig[0] = 0; a.ig[1] = 0; a.ig[2] = 1; a.ig[3] = 2; a.ig[4] = 4;
-
-a.jg = new size_t[4];
-a.jg[0] = 0; a.jg[1] = 1; a.jg[2] = 1; a.jg[3] = 2;
-
-a.di = new double[4];
-a.di[0] = 1; a.di[1] = 101; a.di[2] = 2, a.di[3] = 101;
-
-a.ggl = new double[4];
-a.ggl[0] = -1; a.ggl[1] = -10; a.ggl[2] = -10; a.ggl[3] = 1;
-
-
-SLAE::factorizeLLT(a, l);
-
-cout << "ig: "  << l.ig[0]  << "; " <<  l.ig[1]  << "; " <<  l.ig[2]  << "; " <<  l.ig[3]  << "; " << l.ig[4] << endl;
-cout << "jg: "  << l.jg[0]  << "; " <<  l.jg[1]  << "; " <<  l.jg[2]  << "; " <<  l.jg[3]  << endl;
-cout << "di: "  << l.di[0]  << "; " <<  l.di[1]  << "; " <<  l.di[2]  << "; " <<  l.di[3]  << endl;
-cout << "ggl: " << l.ggl[0] << "; " <<  l.ggl[1] << "; " <<  l.ggl[2] << "; " <<  l.ggl[3] << endl;
-
-return 0;
-*/
 
 
 

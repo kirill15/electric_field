@@ -60,7 +60,7 @@ private:
 
 public:
     Grid2D();
-    ~Grid2D();
+    virtual ~Grid2D();
 
 
 
@@ -106,7 +106,7 @@ public:
      *  nvkat.txt
      *  rz.txt
      */
-    void saveGrid();
+    virtual void saveGrid();
 
 
 
@@ -125,18 +125,19 @@ public:
 
 
     // Возвращает количество узлов
-    unsigned getCountPoints() const;
-
-
+    virtual unsigned getCountPoints() const;
 
     // Возвращает количество К.Э.
-    unsigned getCountFE() const;
+    virtual unsigned getCountFE() const;
 
     // Возвращает количество узлов по оси r
     unsigned getSizeR() const;
 
     // Возвращает количество узлов по оси z
     unsigned getSizeZ() const;
+
+    // Возвращает nvtr
+    virtual unsigned **getNvtr() const;
 };
 
 

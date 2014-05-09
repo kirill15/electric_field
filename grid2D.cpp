@@ -12,6 +12,11 @@ unsigned Grid2D::getSizeZ() const
     return sizeZ;
 }
 
+unsigned **Grid2D::getNvtr() const
+{
+    return nvtr;
+}
+
 
 void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
 {
@@ -70,7 +75,7 @@ void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
 }
 
 
-Grid2D::Grid2D()
+Grid2D::Grid2D() : rw(nullptr), zw(nullptr), areas(nullptr), rz(nullptr), nvtr(nullptr), nvkat(nullptr), countFE(0)
 {
 }
 

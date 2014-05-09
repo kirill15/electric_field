@@ -66,8 +66,6 @@ public:
     // Учет первого краевого условия
     void firstBoundaryCondition();
 
-    void firstBoundaryCondition2();
-
 
     // Решение СЛАУ
     /* Начальное приближение задается внутри (НЕ ОЧЕНЬ) */

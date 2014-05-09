@@ -5,6 +5,9 @@
 #include <fstream>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+
+#include "grid2D.h"
 
 using namespace std;
 
@@ -26,7 +29,7 @@ struct Coord3D
 };
 
 
-class Grid3D
+class Grid3D : public Grid2D
 {
 private:
     int nXW; // Размерность массива xw
@@ -49,6 +52,11 @@ private:
     unsigned sizeY; // Количество узлов по оси y
     unsigned sizeZ; // Количество узлов по оси z
 
+    int compare (const void * a, const void * b)
+    {
+      return ( *(double*)a - *(double*)b );
+    }
+
 public:
     // Массивы, описывающие КЭ:
     Coord3D *xyz; // Координаты узлов
@@ -68,7 +76,7 @@ private:
     unsigned getAreaNumber(int xLeft, int xRight, int yNear, int yFar, int zLow, int zTop);
 public:
     Grid3D();
-
+    virtual ~Grid3D();
 
 
 
@@ -111,6 +119,19 @@ public:
     void createGrid();
 
 
+    // Сохранение сетки в файлы
+    void saveGrid();
+
+
+    // Возвращает количество узлов
+    unsigned getCountPoints() const;
+
+
+    // Возвращает количество К.Э.
+    unsigned getCountFE() const;
+
+
+    unsigned **getNvtr() const;
 
 
 
@@ -118,14 +139,9 @@ public:
 
 
 
-
-
-
-
-
-
-
-
+    unsigned getSizeX() const;
+    unsigned getSizeY() const;
+    unsigned getSizeZ() const;
 };
 
 

@@ -8,7 +8,6 @@ unsigned Grid3D::getAreaNumber(int xLeft, int xRight, int yNear, int yFar, int z
     throw "Not find number of area";
 }
 
-
 void Grid3D::createArrays(double *x, double *y, double *z)
 {
     // Количество узлов
@@ -61,7 +60,7 @@ void Grid3D::createArrays(double *x, double *y, double *z)
                     for (size_t iX = 0; iX < partitionsX.size(); iX++)      // Проход по всем областям по оси X
                     {
                         uint num = getAreaNumber(iX, iX + 1, iY, iY + 1, iZ, iZ + 1);
-                        for (int g = 0; g < partitionsZ[iX].first; g++)     // Проход по всем интервалам по оси X
+                        for (int g = 0; g < partitionsX[iX].first; g++)     // Проход по всем интервалам по оси X
                             nvkat[k++] = num;
                     }
 }
@@ -69,6 +68,24 @@ void Grid3D::createArrays(double *x, double *y, double *z)
 
 Grid3D::Grid3D()
 {
+}
+
+Grid3D::~Grid3D()
+{
+    delete[] xw;
+    delete[] yw;
+    delete[] zw;
+    if (areas)
+    {
+        for (size_t i = 0; i < l; i++)
+            delete[] areas[i];
+        delete areas;
+    }
+    delete[] xyz;
+    for (size_t i = 0; i < countFE; i++)
+        delete[] nvtr[i];
+    delete[] nvtr;
+    delete nvkat;
 }
 
 
@@ -205,6 +222,97 @@ void Grid3D::createGrid()
 
     // Заполняем массив x
     int i = 0;
+    for (size_t partNum = 0; partNum < partitionsX.size(); partNum++)
+    {
+        // Левая граница
+        double xLeft = xw[partNum];
+
+        // Правая граница
+        double xRight = xw[partNum + 1];
+
+        // Количество подобластей
+        int numX = partitionsX[partNum].first;
+
+        // Коэффициент разрядки
+        double koefRazrX = partitionsX[partNum].second;
+
+        // Начальный шаг
+        double stepX = (koefRazrX != 1) ? (xRight - xLeft) * (koefRazrX - 1.0) / (pow(koefRazrX, numX) - 1.0) : (xRight - xLeft) / numX;
+
+        x[i++] = xLeft;
+        for (int j = 1; j <= numX; j++, i++)
+        {
+            x[i] = x[i - 1] + stepX;
+            stepX *= koefRazrX;
+        }
+        x[--i] = xRight;
+    }
+
+    // Заполняем массив y
+    i = 0;
+    for (size_t partNum = 0; partNum < partitionsY.size(); partNum++)
+    {
+        // Ближняя граница
+        double yLeft = yw[partNum];
+
+        // Дальняя граница
+        double yRight = yw[partNum + 1];
+
+        // Количество подобластей
+        int numY = partitionsY[partNum].first;
+
+        // Коэффициент разрядки
+        double koefRazrY = partitionsY[partNum].second;
+
+        // Начальный шаг
+        double stepY = (koefRazrY != 1) ? (yRight - yLeft) * (koefRazrY - 1.0) / (pow(koefRazrY, numY) - 1.0) : (yRight - yLeft) / numY;
+
+        y[i++] = yLeft;
+        for (int j = 1; j <= numY; j++, i++)
+        {
+            y[i] = y[i - 1] + stepY;
+            stepY *= koefRazrY;
+        }
+        y[--i] = yRight;
+    }
+
+    // Заполняем массив z
+    i = 0;
+    for (size_t partNum = 0; partNum < partitionsZ.size(); partNum++)
+    {
+        // Нижняя граница
+        double zLow = zw[partNum];
+
+        // Верхняя граница
+        double zTop = zw[partNum + 1];
+
+        // Количество подобластей
+        int numZ = partitionsZ[partNum].first;
+
+        // Коэффициент разрядки
+        double koefRazrZ = partitionsZ[partNum].second;
+
+        // Начальный шаг
+        double stepZ = koefRazrZ != 1.0 ? (zTop - zLow) * (koefRazrZ - 1) / (pow(koefRazrZ, numZ) - 1) : (zTop - zLow) / numZ;
+
+        z[i++] = zLow;
+        for (int j = 1; j <= numZ; j++, i++)
+        {
+            z[i] = z[i - 1] + stepZ;
+            stepZ *= koefRazrZ;
+        }
+        z[--i] = zTop;
+    }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+/* ЧЕ ЭТО ТАКОЕ?
+
+
+
+    // Заполняем массив x
+    int i = 0;
     size_t numInArea = 0;
     for (size_t partNum = 0; partNum < partitionsX.size(); partNum++)
     {
@@ -234,6 +342,7 @@ void Grid3D::createGrid()
 
     // Заполняем массив y
     i = 0;
+    numInArea = 0;
     for (size_t partNum = 0; partNum < partitionsY.size(); partNum++)
     {
         // Ближняя граница
@@ -262,6 +371,7 @@ void Grid3D::createGrid()
 
     // Заполняем массив z
     i = 0;
+    numInArea = 0;
     for (size_t partNum = 0; partNum < partitionsZ.size(); partNum++)
     {
         // Нижняя граница
@@ -287,6 +397,25 @@ void Grid3D::createGrid()
         }
         z[--i] = zTop;
     }
+*/
+
+//////////////// НУЖНО ЛИ СОРТИРОВАТЬ ЭТОТ МАССИВ???
+/*    std::sort(x, x + sizeX);
+    std::sort(y, y + sizeY);
+    std::sort(z, z + sizeZ);
+
+    for (int i = 0; i < sizeX; ++i) {
+        cout << x[i] << "\t";
+    } cout << endl;
+    for (int i = 0; i < sizeY; ++i) {
+        cout << y[i] << "\t";
+    } cout << endl;
+    for (int i = 0; i < sizeZ; ++i) {
+        cout << z[i] << "\t";
+    } cout << endl;*/
+////////////////
+
+////////////////////////////////////////////////////////////////////////////////
 
     // Создаем массивы nvtr, nvkat, xyz
     createArrays(x, y, z);
@@ -296,3 +425,68 @@ void Grid3D::createGrid()
     delete[] y;
     delete[] z;
 }
+
+
+void Grid3D::saveGrid()
+{
+    ofstream f;
+
+    f.open("3D_nvtr.txt");
+    f << countFE << endl;
+    for (size_t i = 0; i < countFE; i++)
+    {
+        for (size_t j = 0; j < 8; j++)
+            f << nvtr[i][j] + 1 << " ";
+        f << endl;
+    }
+    f.close();
+
+    f.open("3D_nvkat.txt");
+    for (size_t i = 0; i < countFE; i++)
+        f << nvkat[i] + 1 << endl;
+    f.close();
+
+    f.open("3D_xyz.txt");
+    f << countPoints << endl;
+    for (size_t i = 0; i < countPoints; i++)
+        f << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
+    f.close();
+}
+
+
+unsigned Grid3D::getCountPoints() const
+{
+    return countPoints;
+}
+
+unsigned Grid3D::getCountFE() const
+{
+    return countFE;
+}
+
+unsigned **Grid3D::getNvtr() const
+{
+    return nvtr;
+}
+
+unsigned Grid3D::getSizeX() const
+{
+    return sizeX;
+}
+
+unsigned Grid3D::getSizeY() const
+{
+    return sizeY;
+}
+
+unsigned Grid3D::getSizeZ() const
+{
+    return sizeZ;
+}
+
+
+
+
+
+
+
