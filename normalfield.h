@@ -69,7 +69,7 @@ public:
 
     // Решение СЛАУ
     /* Начальное приближение задается внутри (НЕ ОЧЕНЬ) */
-    void solve();
+    void solve(string method = "MSG_LLT", size_t maxIter = 1000);
 
     // Сохранить решение СЛАУ
     void saveSolve();
@@ -88,6 +88,10 @@ public:
     // Создание портрета из файлов ig, jg
     /******************************** РЕАЛИЗОВАТЬ! *********************************/
     int createPortrait(string ig, string jg);
+
+
+    // Получить значение σ на слое
+    double getSigma(double z);
 
 
     // Получить решение в точке

@@ -123,6 +123,9 @@ public:
     int txtToDat(string pathToProgram);
 
 
+    // Возвращает номер подобласти по координате (проверка только по z)
+    size_t getArea(double z);
+
 
     // Возвращает количество узлов
     virtual unsigned getCountPoints() const;

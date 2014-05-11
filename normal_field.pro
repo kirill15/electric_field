@@ -10,7 +10,8 @@ SOURCES += main.cpp \
     slae.cpp \
     matrixfem.cpp \
     anomalousfield.cpp \
-    grid3D.cpp
+    grid3D.cpp \
+    hel.cpp
 
 HEADERS += \
     normalfield.h \
@@ -19,7 +20,8 @@ HEADERS += \
     matrixfem.h \
     matrix.h \
     anomalousfield.h \
-    grid3D.h
+    grid3D.h \
+    hel.h
 
 OTHER_FILES += \
     area.txt \

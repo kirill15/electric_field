@@ -30,6 +30,14 @@ void test(double *v, Coord *rz, size_t size)
     file.close();
 }
 
+double getXYZExact(Coord3D p)
+{
+    //return p.x * p.x * p.y *p.y * p.z * p.z;
+    //return exp(p.x * p.y * p.z);
+    return p.x * p.y * p.z;
+}
+
+
 
 int main()
 {
@@ -95,35 +103,35 @@ int main()
 
 
 
-/*
-    Grid3D grid;
-    cout << grid.readArea("../normal_field/area3D.txt") << endl;
-    cout << grid.readPartitions("../normal_field/grid3D.txt") << endl;
-    grid.createGrid();
-    grid.saveGrid();
-
-    MatrixFEM matrix;
-    matrix.generatePortrait(&grid, 8);
-    matrix.savePortrait();
-*/
-
     AnomalousField u;
-    u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt");
+    u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt", 0);
     u.getGrid()->saveGrid();
     u.createPortrait();
     u.getMatrix()->savePortrait();
     u.readSigma("../normal_field/sigma3D.txt");
     u.createGlobalSLAE();
-    u.getMatrix()->saveElements();
+    //u.getMatrix()->saveElements();
     u.firstBoundaryCondition();
+    u.getMatrix()->saveElements();
     u.setEps(1e-45);
     u.solve();
-    double *x;
+    double *x, *xe;
     size_t size;
     x = u.getV(size);
+    Coord3D *pp = u.getGrid()->xyz;
+    xe = new double[size];
     cout << "x:\n";
     for (size_t i = 0; i < size; i++)
-        cout << i + 1 << ":\t" << x[i] << endl;
+    {
+        xe[i] = getXYZExact(pp[i]);
+        cout << i + 1 << ":\t" << x[i] << "\t" << xe[i] << endl;
+    }
+
+    double normXE = SLAE::norm(xe, size);
+    SLAE::subVectorVector(x, xe, size, xe);
+    double normX_Xe = SLAE::norm(xe, size);
+    cout << "К.Э: "<< std::scientific << u.getGrid()->getCountFE() << endl;
+    cout << "Относительная погрешность: " << normX_Xe / normXE << endl;
 
     return 0;
 }

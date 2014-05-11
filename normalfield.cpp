@@ -219,7 +219,7 @@ void NormalField::firstBoundaryCondition()
 }
 
 
-void NormalField::solve()
+void NormalField::solve(string method, size_t maxIter)
 {
     // Выделяем память под результат
     if (v)
@@ -231,8 +231,10 @@ void NormalField::solve()
         v[i] = 0.0001;
 
     // Решаем СЛАУ
-    //SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, 15000);
-    SLAE::solveMSG_LLT(matrix->matrix(), f, v, eps, 1000);
+    if (method == "MSG_LLT")
+        SLAE::solveMSG_LLT(matrix->matrix(), f, v, eps, maxIter);
+    else if (method == "LOS_LU")
+        SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, maxIter);
 
     matrix->saveElements();
 }
@@ -284,6 +286,12 @@ void NormalField::createPortrait()
         matrix = new MatrixFEM;
 
     matrix->generatePortrait(grid, 4);
+}
+
+double NormalField::getSigma(double z)
+{
+    size_t num = grid->getArea(z);
+    return sigmas[num];
 }
 
 

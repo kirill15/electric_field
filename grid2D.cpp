@@ -286,6 +286,14 @@ int Grid2D::txtToDat(string pathToProgram)
     return 0;
 }
 
+size_t Grid2D::getArea(double z)
+{
+    for (size_t i = 0; i < l; i++)
+        if (areas[i][3] <= z && areas[i][4] >= z)
+            return areas[i][0];
+    throw "Not find number of area";
+}
+
 
 unsigned Grid2D::getCountPoints() const
 {

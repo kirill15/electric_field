@@ -3,6 +3,7 @@
 
 #include "grid3D.h"
 #include "matrixfem.h"
+#include "normalfield.h"
 
 class AnomalousField
 {
@@ -10,6 +11,11 @@ private:
     Grid3D *grid; // Расчетная сетка
 
     MatrixFEM *matrix; // Конечноэлементная матрица
+
+    Coord3D pSourcePlus; // Координаты источника (+)
+    Coord3D pSourceMinus; // Координаты источника (-)
+
+    NormalField *v0;
 
     double *f; // Правая часть
 
@@ -26,6 +32,10 @@ private:
      */
     double GetUg(Coord3D p, int nvk);
 
+    // V0(x, y, z)
+    double getV0(Coord3D p);
+
+
     // Значение F |||||||||||||||||| Для теста |||||||||||||||||||
     double getF(Coord3D p, int nvk);
 
@@ -41,8 +51,9 @@ private:
      * stepOutside::size_t - размер шага для перехода на следующий "уровень"
      * sizeInside::size_t - размер ребра
      * limit::size_t - максимальное значение номера узла
+     * stepInside::size_t - шаг "внутренний"
      */
-    void firstBoundaryConditionOnFace(size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit = 0);
+    void firstBoundaryConditionOnFace(size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit = 0, size_t stepInside = 1);
 
 
 public:
@@ -57,7 +68,7 @@ public:
     void createLocalG(const Coord3D p[8], int nvk, double G[8][8]);
 
     // Локальный вектор правой части |||||||||||||||||| Для теста |||||||||||||||||||
-    void createLocalF(const Coord3D p[8], int nvk, double F[8]);
+    void createLocalF(const Coord3D p[8], int nvk, double G[8][8], double F[8]);
 
     // Считывание значений сигмы на слоях из файла
     int readSigma(string fileWithSigma);
@@ -71,19 +82,25 @@ public:
     void firstBoundaryCondition();
 
     // Решение СЛАУ
-    /* Начальное приближение задается внутри (НЕ ОЧЕНЬ) */
-    void solve();
+    void solve(string method = "MSG_LLT", size_t maxIter = 1000);
 
 
 
     // Создание сетки из файлов, описывающих область и ее разбиение
-    int createGrid(string fileWithArea, string fileWithGrid);
+    int createGrid(string fileWithArea, string fileWithGrid, size_t fragmentation = 0);
 
     // Создание портрета по сетке
     void createPortrait();
 
     // Получить вектор весов решения
     double *getV(unsigned &size) const;
+
+    // Задать координаты ГЭЛа
+    void setSource(Coord3D plus, Coord3D minus);
+
+    // Задать основное поле
+    void setNormalField(NormalField *v);
+
 
     double getEps() const;
     void setEps(double value);

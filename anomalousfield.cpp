@@ -1,6 +1,6 @@
 #include "anomalousfield.h"
 
-AnomalousField::AnomalousField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
+AnomalousField::AnomalousField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15), v0(nullptr)
 {
 }
 
@@ -36,11 +36,27 @@ void AnomalousField::setMatrix(MatrixFEM *value)
 }
 double AnomalousField::GetUg(Coord3D p, int nvk)
 {
+    //return p.x * p.x * p.y *p.y * p.z * p.z;
+    //return exp(p.x * p.y * p.z);
     return p.x * p.y * p.z;
+}
+
+double AnomalousField::getV0(Coord3D p)
+{
+    double r = sqrt((p.x - pSourcePlus.x) * (p.x - pSourcePlus.x)  +  (p.y - pSourcePlus.y) * (p.y - pSourcePlus.y));
+    Coord rz(r, p.z);
+    double v0A = v0->getValue(rz);
+
+    rz.r = sqrt((p.x - pSourceMinus.x) * (p.x - pSourceMinus.x)  +  (p.y - pSourceMinus.y) * (p.y - pSourceMinus.y));
+    double v0B = v0->getValue(rz);
+
+    return v0A + v0B;
 }
 
 double AnomalousField::getF(Coord3D p, int nvk)
 {
+    //return -2.0 * (p.y*p.y * p.z*p.z  +  p.x*p.x * p.z*p.z  +  p.x*p.x * p.y*p.y);
+    //return -2.0 * exp(p.x * p.y * p.z) * (p.y*p.y * p.z*p.z  +  p.x*p.x * p.z*p.z  +  p.x*p.x * p.y*p.y);
     return 0.0;
 }
 
@@ -56,7 +72,7 @@ void AnomalousField::localM_1D(double M[2][2], double h)
     M[0][1] = M[1][0] = h / 6.0;
 }
 
-void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit)
+void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit, size_t stepInside)
 {
     Matrix a = matrix->matrix();
 
@@ -67,10 +83,10 @@ void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t step
     uint *nvkat = grid->nvkat;
 
     for (size_t i = startIndex; i < limit; i += stepOutside)
-        for (size_t j = 0; j < sizeInside; j++)
+        for (size_t j = 0; j < sizeInside; j += stepInside)
         {
             size_t el = i + j;
-//            cout << el + 1 << endl;
+            cout << el + 1 << endl;
 
             a.di[el] = 1.0;
             double Ug = GetUg(xyz[el], nvkat[el]);
@@ -105,7 +121,7 @@ void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t step
     cout << endl;
 }
 
-int AnomalousField::createGrid(string fileWithArea, string fileWithGrid)
+int AnomalousField::createGrid(string fileWithArea, string fileWithGrid, size_t fragmentation)
 {
     if (grid)
         delete grid;
@@ -120,7 +136,7 @@ int AnomalousField::createGrid(string fileWithArea, string fileWithGrid)
     }
 
     // Считываем разбиения области
-    if (grid->readPartitions(fileWithGrid))
+    if (grid->readPartitions(fileWithGrid, fragmentation))
     {
         cerr << "Не удалось считать разбиение области" << endl;
         return -1;
@@ -148,13 +164,77 @@ double *AnomalousField::getV(unsigned &size) const
     return v;
 }
 
+void AnomalousField::setSource(Coord3D plus, Coord3D minus)
+{
+    pSourcePlus = plus;
+    pSourceMinus = minus;
+}
+
+void AnomalousField::setNormalField(NormalField *v)
+{
+    v0 = v;
+}
+
 void AnomalousField::createLocalG(const Coord3D p[8], int nvk, double G[8][8])
 {
+
     double hX = p[1].x - p[0].x;
     double hY = p[2].y - p[0].y;
     double hZ = p[4].z - p[0].z;
 
-    double sigma = sigmas[nvk];
+//////////////////////////////////////////
+/*
+    double **sigma = sigmas[nvk];
+
+    double s11hxhy_hz = sigma[0][0] * hX * hY / hZ;
+    double s22hxhz_hy = sigma[1][1] * hX * hZ / hY;
+    double s33hxhy_hz = sigma[2][2] * hX * hY / hZ;
+
+    G[0][0] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[0][1] = (1.0 / 18.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+    G[0][2] = (-1.0 / 9.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+    G[0][3] = (-1.0 / 18.0) * s22hxhz_hy  +  (1.0 / 36.0) * s11hxhy_hz  +  (1.0 / 36.0) * s33hxhy_hz;
+    G[0][4] = (1.0 / 18.0) * s22hxhz_hy   -  (1.0 / 9.0) * s11hxhy_hz   -  (1.0 / 9.0) * s33hxhy_hz;
+    G[0][5] = (1.0 / 36.0) * s22hxhz_hy   -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+    G[0][6] = (-1.0 / 18.0) * s22hxhz_hy  -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+    G[0][7] = (-1.0 / 36.0) * s22hxhz_hy  -  (1.0 / 36.0) * s11hxhy_hz  -  (1.0 / 36.0) * s33hxhy_hz;
+
+    G[1][1] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[1][2] = (-1.0 / 18.0) * s22hxhz_hy  +  (1.0 / 36.0) * s11hxhy_hz  +  (1.0 / 36.0) * s33hxhy_hz;
+    G[1][3] = (-1.0 / 9.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+    G[1][4] = (1.0 / 36.0) * s22hxhz_hy   -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+    G[1][5] = (1.0 / 18.0) * s22hxhz_hy   -  (1.0 / 9.0) * s11hxhy_hz   -  (1.0 / 9.0) * s33hxhy_hz;
+    G[1][6] = (-1.0 / 36.0) * s22hxhz_hy  -  (1.0 / 36.0) * s11hxhy_hz  -  (1.0 / 36.0) * s33hxhy_hz;
+    G[1][7] = (-1.0 / 18.0) * s22hxhz_hy  -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+
+    G[2][2] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[2][3] = (1.0 / 18.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+    G[2][4] = (-1.0 / 18.0) * s22hxhz_hy  -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+    G[2][5] = (-1.0 / 36.0) * s22hxhz_hy  -  (1.0 / 36.0) * s11hxhy_hz  -  (1.0 / 36.0) * s33hxhy_hz;
+    G[2][6] = (1.0 / 18.0) * s22hxhz_hy   -  (1.0 / 36.0) * s11hxhy_hz  -  (1.0 / 9.0) * s33hxhy_hz;
+    G[2][7] = (1.0 / 36.0) * s22hxhz_hy   -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+
+    G[3][3] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[3][4] = (-1.0 / 36.0) * s22hxhz_hy  -  (1.0 / 36.0) * s11hxhy_hz  -  (1.0 / 36.0) * s33hxhy_hz;
+    G[3][5] = (-1.0 / 18.0) * s22hxhz_hy  -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+    G[3][6] = (1.0 / 36.0) * s22hxhz_hy   -  (1.0 / 18.0) * s11hxhy_hz  -  (1.0 / 18.0) * s33hxhy_hz;
+    G[3][7] = (1.0 / 18.0) * s22hxhz_hy   -  (1.0 / 9.0) * s11hxhy_hz   -  (1.0 / 9.0) * s33hxhy_hz;
+
+    G[4][4] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[4][5] = (1.0 / 18.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+    G[4][6] = (-1.0 / 9.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+    G[4][7] = (-1.0 / 18.0) * s22hxhz_hy  +  (1.0 / 36.0) * s11hxhy_hz  +  (1.0 / 36.0) * s33hxhy_hz;
+
+    G[5][5] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[5][6] = (-1.0 / 18.0) * s22hxhz_hy  +  (1.0 / 36.0) * s11hxhy_hz  +  (1.0 / 36.0) * s33hxhy_hz;
+    G[5][7] = (-1.0 / 9.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+
+    G[6][6] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+    G[6][7] = (1.0 / 18.0) * s22hxhz_hy   +  (1.0 / 18.0) * s11hxhy_hz  +  (1.0 / 18.0) * s33hxhy_hz;
+
+    G[7][7] = (1.0 / 9.0) * s22hxhz_hy    +  (1.0 / 9.0) * s11hxhy_hz   +  (1.0 / 9.0) * s33hxhy_hz;
+*/
+//////////////////////////////////////////
 
     // Одномерные матрицы жесткости и массы
     double Gx[2][2];
@@ -185,57 +265,34 @@ void AnomalousField::createLocalG(const Coord3D p[8], int nvk, double G[8][8])
             nuj = (j / 2) % 2;
             vj = (j / 4);
 
-            G[i][j] = sigma * (Gx[mui][muj] * My[nui][nuj] * Mz[vi][vj] +
+            G[i][j] =         (Gx[mui][muj] * My[nui][nuj] * Mz[vi][vj] +
                                Mx[mui][muj] * Gy[nui][nuj] * Mz[vi][vj] +
                                Mx[mui][muj] * My[nui][nuj] * Gz[vi][vj]);
         }
     }
 }
 
-void AnomalousField::createLocalF(const Coord3D p[], int nvk, double F[])
+void AnomalousField::createLocalF(const Coord3D p[], int nvk, double G[][8], double F[])
 {
     double hX = p[1].x - p[0].x;
     double hY = p[2].y - p[0].y;
     double hZ = p[4].z - p[0].z;
 
-    // Одномерные матрицы массы
-    double Mx[2][2];
-    double My[2][2];
-    double Mz[2][2];
-
-    localM_1D(Mx, hX);
-    localM_1D(My, hY);
-    localM_1D(Mz, hZ);
-
-    // Трехмерная матрица массы
-    double C[8][8];
-    size_t mui, nui, vi, muj, nuj, vj;
-    for (size_t i = 0; i < 8; i++)
-    {
-        mui = i % 2;
-        nui = (i / 2) % 2;
-        vi = (i / 4);
-        for (size_t j = 0; j < 8; j++)
-        {
-            muj = j % 2;
-            nuj = (i / 2) % 2;
-            vj = (i / 4);
-
-            C[i][j] = Mx[mui][muj] * My[nui][nuj] * Mz[vi][vj];
-        }
-    }
+    double sigma = sigmas[nvk];
+    double sigma0 = v0->getSigma((p[4].z - p[0].z) / 2.0);
+    double dSigma = sigma0 - sigma;
 
     // f
-    double f[8];
+    double q0[8];
     for (size_t i = 0; i < 8; i++)
-        f[i] = getF(p[i], nvk);
+        q0[i] = getV0(p[i]);
 
-    // F=M*f
+    // F=G*q0
     for (size_t i = 0; i < 8; i++)
     {
         double s = 0.0;
         for (size_t j = 0; j < 8; j++)
-            s += C[i][j] * f[j];
+            s += dSigma * G[i][j] * q0[j];
         F[i] = s;
     }
 }
@@ -251,6 +308,7 @@ int AnomalousField::readSigma(string fileWithSigma)
 
     int n, num;
     double val;
+
     file >> n;
 
     sigmas = new double[n];
@@ -260,6 +318,27 @@ int AnomalousField::readSigma(string fileWithSigma)
         file >> num >> val;
         sigmas[num - 1] = val;
     }
+
+
+/*
+    sigmas = new double**[n];
+
+    for (int i = 0; i < n; i++)
+    {
+        file >> num;
+
+        sigmas[i] = new double*[3];
+        for (size_t j = 0; j < 3; j++)
+        {
+            sigmas[i] = new double[3];
+            for (size_t k = 0; k < 3; k++)
+            {
+                file >> val;
+                sigmas[num - 1][j][k] = val;
+            }
+        }
+    }
+*/
 
     file.close();
 
@@ -299,16 +378,18 @@ void AnomalousField::createGlobalSLAE()
         for (size_t i = 0; i < 8; i++)
             p[i] = xyz[nvtr[k][i]];
 
+        double sigma = sigmas[nvkat[k]];
+
         // Создаем локальную матрицу жесткости
         createLocalG(p, nvkat[k], G);
 
         // Создаем локальный вектор правой части
-        createLocalF(p, nvkat[k], F);
+        createLocalF(p, nvkat[k], G, F);
 
         // Заносим матрицу жесткости в глобальную СЛАУ
         for(int i = 0; i < 8; i++)	// Цикл по строкам локальной матрицы
         {
-            a.di[nvtr[k][i]] += G[i][i];    // Диагональные элементы
+            a.di[nvtr[k][i]] += sigma * G[i][i];    // Диагональные элементы
 
             uint column = nvtr[k][i];		// Искомый номер столбца
 
@@ -325,7 +406,7 @@ void AnomalousField::createGlobalSLAE()
                     else
                         right = mid;
                 }
-                a.ggl[left] += G[i][j];
+                a.ggl[left] += sigma * G[i][j];
             }
         }
 
@@ -333,6 +414,10 @@ void AnomalousField::createGlobalSLAE()
         for (size_t i = 0; i < 8; i++)
             f[nvtr[k][i]] += F[i];
     }
+
+    cout << "f:\n";
+    for (size_t i = 0; i < a.n; i++)
+        cout << f[i] << endl;
 }
 
 void AnomalousField::firstBoundaryCondition()
@@ -348,22 +433,17 @@ void AnomalousField::firstBoundaryCondition()
     firstBoundaryConditionOnFace(0, sizeXY, sizeX);
     // Дальняя грань
     firstBoundaryConditionOnFace(sizeXY - sizeX, sizeXY, sizeX);
-    cout << "!" << f[13] << endl;
     // Левая грань
-    firstBoundaryConditionOnFace(sizeX, sizeXY, sizeY - 2);
-    cout << "!" << f[13] << endl;
+    firstBoundaryConditionOnFace(sizeX, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
     // Правая грань
-    firstBoundaryConditionOnFace(2 * sizeX - 1, sizeXY, sizeY - 2);
-    cout << "!" << f[13] << endl;
+    firstBoundaryConditionOnFace(2 * sizeX - 1, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
     // Нижняя грань
-    firstBoundaryConditionOnFace(sizeX + 1, 3, sizeX - 2, sizeXY - sizeX - 1);
-    cout << "!" << f[13] << endl;
+    firstBoundaryConditionOnFace(sizeX + 1, sizeX, sizeX - 2, sizeXY - sizeX - 1);
     // Верхняя грань
-    firstBoundaryConditionOnFace(a.n - sizeXY + sizeX + 1, 3, sizeX - 2, a.n - sizeX);
-    cout << "!" << f[13] << endl;
+    firstBoundaryConditionOnFace(a.n - sizeXY + sizeX + 1, sizeX, sizeX - 2, a.n - sizeX);
 }
 
-void AnomalousField::solve()
+void AnomalousField::solve(string method, size_t maxIter)
 {
     // Выделяем память под результат
     if (v)
@@ -375,8 +455,10 @@ void AnomalousField::solve()
         v[i] = 0.0001;
 
     // Решаем СЛАУ
-    //SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, 15000);
-    SLAE::solveMSG_LLT(matrix->matrix(), f, v, eps, 1000);
+    if (method == "MSG_LLT")
+        SLAE::solveMSG_LLT(matrix->matrix(), f, v, eps, maxIter);
+    else if (method == "LOS_LU")
+        SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, maxIter);
 }
 
 
