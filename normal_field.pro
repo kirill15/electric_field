@@ -11,7 +11,8 @@ SOURCES += main.cpp \
     matrixfem.cpp \
     anomalousfield.cpp \
     grid3D.cpp \
-    hel.cpp
+    hel.cpp \
+    mke_3d.cpp
 
 HEADERS += \
     normalfield.h \
@@ -21,7 +22,8 @@ HEADERS += \
     matrix.h \
     anomalousfield.h \
     grid3D.h \
-    hel.h
+    hel.h \
+    mke_3d.h
 
 OTHER_FILES += \
     area.txt \

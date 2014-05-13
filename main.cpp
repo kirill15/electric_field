@@ -1,10 +1,9 @@
 #include <iostream>
-#include "normalfield.h"
-#include "grid2D.h"
 #include <iomanip>
-#include "anomalousfield.h"
 #include "grid3D.h"
 #include "hel.h"
+
+//#include "mke_3d.h"
 
 using namespace std;
 
@@ -98,8 +97,8 @@ int main()
     */
 
 
-    /*
-    AnomalousField u;
+/*
+    Mke3D u;
     u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt", 0);
     u.getGrid()->saveGrid();
     u.createPortrait();
@@ -109,8 +108,21 @@ int main()
     //u.getMatrix()->saveElements();
     u.firstBoundaryCondition();
     u.getMatrix()->saveElements();
-    u.setEps(1e-45);
+    u.setEps(1e-15);
     u.solve();
+
+
+
+
+    cout << "( 100.0, 100.0,  -1.0)\t" << u.getValue(Coord3D(100.0, 100.0, -1.0)) << endl;
+    cout << "( 200.0, 200,0,  -1.0)\t" << u.getValue(Coord3D(200.0, 200.0, -1.0)) << endl;
+    cout << "(300.0,  300.0,  -1.0)\t" << u.getValue(Coord3D(300.0, 300.0, -1.0)) << endl;
+    cout << "(500.0,  500.0,  -1.0)\t" << u.getValue(Coord3D(500.0, 500.0, -1.0)) << endl;
+    cout << "(1000.0, 1000.0, -1.0)\t" << u.getValue(Coord3D(1000.0, 1000.0, -1.0)) << endl;
+    cout << "(-8189.87, 6068.66, -1)\t" << u.getValue(Coord3D(-8189.87, 6068.66, -1)) << endl;
+
+
+
     double *x, *xe;
     size_t size;
     x = u.getV(size);
@@ -128,7 +140,7 @@ int main()
     double normX_Xe = SLAE::norm(xe, size);
     cout << "К.Э: "<< std::scientific << u.getGrid()->getCountFE() << endl;
     cout << "Относительная погрешность: " << normX_Xe / normXE << endl;
-    */
+*/
 
 
 

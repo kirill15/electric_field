@@ -39,7 +39,7 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
     vZero.saveSolve();
     cout << "----Решене сохранено" << endl;
 
-    cout << vZero.getValue(Coord(22500.347219543, -200)) << endl;
+//    cout << vZero.getValue(Coord(22500.347219543, -200)) << endl;
 
 /*
     if (vZero.getGrid()->txtToDat("../normal_field/txtToDat/txttodat") == 0)
@@ -51,14 +51,34 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
         cin >> c;
         if (c == 'y' || c == 'Y')
             system("cd for_telma && wineconsole go.bat");
-    }*/
+    }
+    */
+
+
+    cout << "10, 10, -50:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -50)) << endl;
+    cout << "10, 10, -150:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -150)) << endl;
+    cout << "10, 10, -250:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -250)) << endl;
+    cout << "70, 70, -200:\t" << vZero.getValue(Coord(sqrt(70*70 + 70*70), -200)) << endl;
+    cout << "200, 200, -150:\t" << vZero.getValue(Coord(sqrt(200*200 + 200*200), -150)) << endl;
+    cout << "200, 200, -250:\t" << vZero.getValue(Coord(sqrt(200*200 + 200*200), -250)) << endl;
+    cout << "150, 150, -1000:\t" << vZero.getValue(Coord(sqrt(150*150 + 150*150), -1000)) << endl;
+
+    ofstream file("V0.csv");
+    size_t size;
+    double *x = vZero.getV(size);
+    Coord *p = vZero.getGrid()->rz;
+    for (size_t i = 0; i < size; i++)
+    {
+        file<< p[i].r << ";" << p[i].z << ";" << x[i] << endl;
+    }
+    file.close();
 }
 
 void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fileWithSigma)
 {
     vPlus.setEps(epsVPlus);
 
-    if (vPlus.createGrid(fileWithArea, fileWithGrid, 2) == 0)
+    if (vPlus.createGrid(fileWithArea, fileWithGrid, 0) == 0)
         cout << "--Сетка создана" << endl;
 
     vPlus.getGrid()->saveGrid();
@@ -89,29 +109,55 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
     cout << "--СЛАУ решена" << endl;
 
 
-    ofstream file("uu.csv");
+
+    cout << "10, 10, -50:\t" << vPlus.getValue(Coord3D(10, 10, -50)) << endl;
+    cout << "10, 10, -150:\t" << vPlus.getValue(Coord3D(10, 10, -150)) << endl;
+    cout << "10, 10, -250:\t" << vPlus.getValue(Coord3D(10, 10, -250)) << endl;
+    cout << "70, 70, -200:\t" << vPlus.getValue(Coord3D(70, 70, -200)) << endl;
+    cout << "200, 200, -150:\t" << vPlus.getValue(Coord3D(200, 200, -150)) << endl;
+    cout << "200, 200, -250:\t" << vPlus.getValue(Coord3D(200, 200, -250)) << endl;
+    cout << "150, 150, -1000:\t" << vPlus.getValue(Coord3D(150, 150, -1000)) << endl;
+
+
+
+
+
+
+
+    ofstream file("V+.csv");
     size_t size;
     double *x = vPlus.getV(size);
     Coord3D *p = vPlus.getGrid()->xyz;
-    double sum = 0.0, sumX = 0.0;
+//    double sum = 0.0, sumX = 0.0;
     for (size_t i = 0; i < size; i++)
     {
-        if (p[i].x == 0 && p[i].y == 0) continue;
-        double uS = 1.0 / (2.0 * M_PI * sqrt(p[i].x*p[i].x + p[i].y*p[i].y + p[i].z*p[i].z) * 0.01);
-        file << p[i].x << ";" << p[i].y << ";" << p[i].z << ";" << x[i] << ";" << uS << ";" << x[i] - uS << endl;
-        sum += (x[i] - uS) * (x[i] - uS);
-        sumX += uS * uS;
+//        if (p[i] == Coord3D(0, 0, 0)) continue;
+//        double uS = 1.0 / (2.0 * M_PI * sqrt(p[i].x*p[i].x + p[i].y*p[i].y + p[i].z*p[i].z) * 0.01);
+        file << p[i].x << ";" << p[i].y << ";" << p[i].z << ";" << x[i] << endl;//<< ";" << uS << ";" << x[i] - uS << endl;
+//        sum += (x[i] - uS) * (x[i] - uS);
+//        sumX += uS * uS;
     }
 
-    file << "||u*-u|| / ||u*||:;" << sqrt(sum) / sqrt(sumX) << endl;
+//    file << "||u*-u|| / ||u*||:;" << sqrt(sum) / sqrt(sumX) << endl;
 
     file.close();
+/*
+    double xx[5];
+    xx[0] = fabs(vPlus.getValue(Coord3D(100.0, 100.0, 0.0)) - 1.0 / (2.0 * M_PI * sqrt(100*100 + 100*100) * 0.01));
+    cout << "( 100.0, 100.0,  0.0)\t" << vPlus.getValue(Coord3D(100.0, 100.0, 0.0)) << "\t" << 1.0 / (2.0 * M_PI * sqrt(100*100 + 100*100) * 0.01) << "  \t " << std::scientific << xx[0] << std::fixed << endl;
+    xx[1] = fabs(vPlus.getValue(Coord3D(200.0, 200.0, 0.0)) - 1.0 / (2.0 * M_PI * sqrt(200*200 + 200*200) * 0.01));
+    cout << "( 200.0, 200,0,  0.0)\t" << vPlus.getValue(Coord3D(200.0, 200.0, 0.0)) << "\t" << 1.0 / (2.0 * M_PI * sqrt(200*200 + 200*200) * 0.01) << "\t " << std::scientific << xx[1] << std::fixed << endl;
+    xx[2] = fabs(vPlus.getValue(Coord3D(300.0, 300.0, 0.0)) - 1.0 / (2.0 * M_PI * sqrt(300*300 + 300*300) * 0.01));
+    cout << "(300.0,  300.0,  0.0)\t" << vPlus.getValue(Coord3D(300.0, 300.0, 0.0)) << "\t" << 1.0 / (2.0 * M_PI * sqrt(300*300 + 300*300) * 0.01) << "\t " << std::scientific << xx[2] << std::fixed << endl;
+    xx[3] = fabs(vPlus.getValue(Coord3D(500.0, 500.0, 0.0)) - 1.0 / (2.0 * M_PI * sqrt(500*500 + 500*500) * 0.01));
+    cout << "(500.0,  500.0,  0.0)\t" << vPlus.getValue(Coord3D(500.0, 500.0, 0.0)) << "\t" << 1.0 / (2.0 * M_PI * sqrt(500*500 + 500*500) * 0.01) << "\t " << std::scientific << xx[3] << std::fixed << endl;
+    xx[4] = fabs(vPlus.getValue(Coord3D(1000.0, 1000.0, 0.0)) - 1.0 / (2.0 * M_PI * sqrt(1000*1000 + 1000*1000) * 0.01));
+    cout << "(1000.0, 1000.0, 0.0)\t" << vPlus.getValue(Coord3D(1000.0, 1000.0, 0.0)) << "\t" << 1.0 / (2.0 * M_PI * sqrt(1000*1000 + 1000*1000) * 0.01) << "\t " << std::scientific << xx[4] << std::fixed << endl;
+    cout << "(-8189.87, 6068.66, -200)\t" << vPlus.getValue(Coord3D(-8189.87, 6068.66, -200)) << "\t" << 1.0 / (2.0 * M_PI * sqrt(8189.87*8189.87 + 6068.66*6068.66 + 200*200) * 0.01) << endl;
 
-    cout << "( 25000.0,  25000.0, 0.0)\t" << vPlus.getValue(Coord3D(25000.0, 25000.0, 0.0)) << endl;
-    cout << "( 25000.0, -25000.0, 0.0)\t" << vPlus.getValue(Coord3D(25000.0, -25000.0, 0.0)) << endl;
-    cout << "(-25000.0, -25000.0, 0.0)\t" << vPlus.getValue(Coord3D(-25000.0, -25000.0, 0.0)) << endl;
-    cout << "(-25000.0,  25000.0, 0.0)\t" << vPlus.getValue(Coord3D(-25000.0, 25000.0, 0.0)) << endl;
-    cout << "(22500.0, -125.0, -200.0)\t" << vPlus.getValue(Coord3D(22500.0, -125.0, -200.0)) << endl;
+    cout << "Норма: " << std::scientific << sqrt(xx[0]*xx[0] + xx[1]*xx[1] + xx[2]*xx[2] + xx[3]*xx[3] + xx[4]*xx[4]) << endl;
+
+    cout << "(): " << vPlus.getValue(Coord3D(10, 10, -147.419)) << endl;*/
 }
 
 void Hel::setJ(double J)

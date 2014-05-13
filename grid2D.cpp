@@ -75,7 +75,7 @@ void Grid2D::createArrays(double *r, double *z, long sizeR, long sizeZ)
 }
 
 
-Grid2D::Grid2D() : rw(nullptr), zw(nullptr), areas(nullptr), rz(nullptr), nvtr(nullptr), nvkat(nullptr), countFE(0)
+Grid2D::Grid2D() : rw(nullptr), zw(nullptr), areas(nullptr), countFE(0), rz(nullptr), nvtr(nullptr), nvkat(nullptr)
 {
 }
 
