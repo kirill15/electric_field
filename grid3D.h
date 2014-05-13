@@ -14,8 +14,9 @@ using namespace std;
 
 
 // Тип - xyz-координата точки
-struct Coord3D
+class Coord3D
 {
+public:
     Coord3D(){}
     Coord3D(double x, double y, double z)
     {
@@ -23,6 +24,11 @@ struct Coord3D
         this->y = y;
         this->z = z;
     }
+    friend bool operator==(const Coord3D &a, const Coord3D &b)
+    {
+        return (a.x == b.x && a.y == b.y && a.z == b.z);
+    }
+
     double x;
     double y;
     double z;

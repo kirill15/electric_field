@@ -12,12 +12,12 @@ private:
 
     MatrixFEM *matrix; // Конечноэлементная матрица
 
+    double *f; // Правая часть
+
     Coord3D pSourcePlus; // Координаты источника (+)
     Coord3D pSourceMinus; // Координаты источника (-)
 
     NormalField *v0;
-
-    double *f; // Правая часть
 
     double *v; // Вектор весов (решение СЛАУ)
 
@@ -77,13 +77,11 @@ public:
     // Глобальная СЛАУ
     void createGlobalSLAE();
 
-
     // Учет первого краевого условия
     void firstBoundaryCondition();
 
     // Решение СЛАУ
     void solve(string method = "MSG_LLT", size_t maxIter = 1000);
-
 
 
     // Создание сетки из файлов, описывающих область и ее разбиение
@@ -100,6 +98,9 @@ public:
 
     // Задать основное поле
     void setNormalField(NormalField *v);
+
+    // Решение в точке
+    double getValue(Coord3D xyz);
 
 
     double getEps() const;

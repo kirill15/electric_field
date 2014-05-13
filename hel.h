@@ -4,7 +4,7 @@
 #include "normalfield.h"
 #include "anomalousfield.h"
 
-class hel
+class Hel
 {
 private:
     NormalField vZero; // Основное поле
@@ -26,8 +26,17 @@ public:
     // Найти добавочное поле
     void findAnomalousField(string fileWithArea, string fileWithGrid, string fileWithSigma);
 
+    // Задать плотность источника
+    void setJ(double J);
 
-    hel();
+    // Задать точности решения СЛАУ
+    void setEps(double epsForV0, double epsForVPlus);
+
+    // Задать координаты анода и катода
+    void setHelCoords(Coord3D anode, Coord3D cathode);
+
+
+    Hel();
 };
 
 #endif // HEL_H

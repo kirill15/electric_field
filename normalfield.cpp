@@ -308,7 +308,7 @@ double NormalField::getValue(Coord rz)
 
     // Получаем номера координатных линий
     size_t p, s, i; /* p - индекс координаты по Х, s - по Y, i - номер узла (на левой границе) */
-    for (p = 0; p < sizeX && rz.r > coords[p].r; p++);
+    for (p = 1; p < sizeX && rz.r > coords[p].r; p++);
     for (i = 0, s = 0; s < sizeY && rz.z > coords[i].z; i += sizeX, s++);
 
     // Получаем глобальные номера базисных функций

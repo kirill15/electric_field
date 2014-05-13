@@ -1,6 +1,6 @@
 #include "anomalousfield.h"
 
-AnomalousField::AnomalousField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15), v0(nullptr)
+AnomalousField::AnomalousField() : grid(nullptr), matrix(nullptr), f(nullptr), v0(nullptr), v(nullptr), eps(1e-15)
 {
 }
 
@@ -36,9 +36,11 @@ void AnomalousField::setMatrix(MatrixFEM *value)
 }
 double AnomalousField::GetUg(Coord3D p, int nvk)
 {
+    return 1.0 / (2.0 * M_PI * sqrt(p.x * p.x + p.y *p.y + p.z * p.z) * 0.01);
+
     //return p.x * p.x * p.y *p.y * p.z * p.z;
     //return exp(p.x * p.y * p.z);
-    return p.x * p.y * p.z;
+    //return p.x * p.y * p.z;
 }
 
 double AnomalousField::getV0(Coord3D p)
@@ -47,10 +49,12 @@ double AnomalousField::getV0(Coord3D p)
     Coord rz(r, p.z);
     double v0A = v0->getValue(rz);
 
-    rz.r = sqrt((p.x - pSourceMinus.x) * (p.x - pSourceMinus.x)  +  (p.y - pSourceMinus.y) * (p.y - pSourceMinus.y));
-    double v0B = v0->getValue(rz);
+    return v0A;
 
-    return v0A + v0B;
+//    rz.r = sqrt((p.x - pSourceMinus.x) * (p.x - pSourceMinus.x)  +  (p.y - pSourceMinus.y) * (p.y - pSourceMinus.y));
+//    double v0B = v0->getValue(rz);
+
+//    return v0A - v0B;
 }
 
 double AnomalousField::getF(Coord3D p, int nvk)
@@ -86,7 +90,9 @@ void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t step
         for (size_t j = 0; j < sizeInside; j += stepInside)
         {
             size_t el = i + j;
-            cout << el + 1 << endl;
+//            cout << el + 1 << endl;
+
+            if (xyz[el] == Coord3D(0.0, 0.0, 0.0)) continue;
 
             a.di[el] = 1.0;
             double Ug = GetUg(xyz[el], nvkat[el]);
@@ -118,7 +124,7 @@ void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t step
                 }
             }
         }
-    cout << endl;
+    cout << "." << endl;
 }
 
 int AnomalousField::createGrid(string fileWithArea, string fileWithGrid, size_t fragmentation)
@@ -173,6 +179,53 @@ void AnomalousField::setSource(Coord3D plus, Coord3D minus)
 void AnomalousField::setNormalField(NormalField *v)
 {
     v0 = v;
+}
+
+double AnomalousField::getValue(Coord3D xyz)
+{
+    Coord3D *coords = grid->xyz;
+    size_t sizeX = grid->getSizeX();
+    size_t sizeY = grid->getSizeY();
+    size_t sizeZ = grid->getSizeZ();
+
+    if (xyz.x < coords[0].x || xyz.x > coords[sizeX - 1].x || xyz.y < coords[0].y || xyz.y > coords[sizeX * sizeY - 1].y || xyz.z < coords[0].z || xyz.z > coords[sizeX * sizeY * sizeZ - 1].z)
+        throw "Point does not lie in the field of";
+
+    size_t sizeXY = sizeX * sizeY;
+
+    // Получаем номера координатных линий
+    size_t p, s, l, i; /* p - индекс координаты по Х, s - по Y, v - по Z */
+    for (p = 1; p < sizeX && xyz.x > coords[p].x; p++);
+    for (s = 0, i = 0; i < sizeY && xyz.y > coords[s].y; s += sizeX, i++);
+    for (l = 0, i = 0; i < sizeZ && xyz.z > coords[l].z; l += sizeXY, i++);
+
+    // Получаем глобальные номера базисных функций
+    size_t k[8];
+    k[1] = (l - sizeXY) + (s - sizeX) + p;
+    k[0] = k[1] - 1;
+    k[3] = k[1] + sizeX;
+    k[2] = k[3] - 1;
+
+    k[4] = k[0] + sizeXY;
+    k[5] = k[1] + sizeXY;
+    k[6] = k[2] + sizeXY;
+    k[7] = k[3] + sizeXY;
+
+    // Считаем значения базисных функций на КЭ
+    double h = coords[p].x - coords[p - 1].x;
+    double X1 = (coords[p].x - xyz.x) / h;
+    double X2 = (xyz.x - coords[p - 1].x) / h;
+
+    h = coords[s].y - coords[s - 1].y;
+    double Y1 = (coords[s].y - xyz.y) / h;
+    double Y2 = (xyz.y - coords[s - 1].y) / h;
+
+    h = coords[l].z - coords[l - 1].z;
+    double Z1 = (coords[l].z - xyz.z) / h;
+    double Z2 = (xyz.z - coords[l - 1].z) / h;
+
+    return v[k[0]] * X1*Y1*Z1  +  v[k[1]] * X2*Y1*Z1  +  v[k[2]] * X1*Y2*Z1  +  v[k[3]] * X2*Y2*Z1  +
+           v[k[4]] * X1*Y1*Z2  +  v[k[5]] * X2*Y1*Z2  +  v[k[6]] * X1*Y2*Z2  +  v[k[7]] * X2*Y2*Z2;
 }
 
 void AnomalousField::createLocalG(const Coord3D p[8], int nvk, double G[8][8])
@@ -270,16 +323,18 @@ void AnomalousField::createLocalG(const Coord3D p[8], int nvk, double G[8][8])
                                Mx[mui][muj] * My[nui][nuj] * Gz[vi][vj]);
         }
     }
+
+
 }
 
 void AnomalousField::createLocalF(const Coord3D p[], int nvk, double G[][8], double F[])
 {
-    double hX = p[1].x - p[0].x;
-    double hY = p[2].y - p[0].y;
-    double hZ = p[4].z - p[0].z;
+//    double hX = p[1].x - p[0].x;
+//    double hY = p[2].y - p[0].y;
+//    double hZ = p[4].z - p[0].z;
 
     double sigma = sigmas[nvk];
-    double sigma0 = v0->getSigma((p[4].z - p[0].z) / 2.0);
+    double sigma0 = v0->getSigma((p[4].z + p[0].z) / 2.0);
     double dSigma = sigma0 - sigma;
 
     // f
@@ -295,6 +350,10 @@ void AnomalousField::createLocalF(const Coord3D p[], int nvk, double G[][8], dou
             s += dSigma * G[i][j] * q0[j];
         F[i] = s;
     }
+
+//    for (size_t i = 0; i < 8; i++)
+//        cout << F[i] << endl;
+//    cin >> sigma;
 }
 
 int AnomalousField::readSigma(string fileWithSigma)
@@ -302,7 +361,7 @@ int AnomalousField::readSigma(string fileWithSigma)
     ifstream file(fileWithSigma.c_str());
     if (!file.is_open())
     {
-        cerr << "Error with opening sigma.txt";
+        cerr << "Error with opening " + fileWithSigma;
         return -1;
     }
 
@@ -384,7 +443,7 @@ void AnomalousField::createGlobalSLAE()
         createLocalG(p, nvkat[k], G);
 
         // Создаем локальный вектор правой части
-        createLocalF(p, nvkat[k], G, F);
+///        createLocalF(p, nvkat[k], G, F);
 
         // Заносим матрицу жесткости в глобальную СЛАУ
         for(int i = 0; i < 8; i++)	// Цикл по строкам локальной матрицы
@@ -411,13 +470,20 @@ void AnomalousField::createGlobalSLAE()
         }
 
         // Заносим локальный вектор правой части в глобальный
-        for (size_t i = 0; i < 8; i++)
-            f[nvtr[k][i]] += F[i];
+///        for (size_t i = 0; i < 8; i++)
+///            f[nvtr[k][i]] += F[i];
     }
 
-    cout << "f:\n";
-    for (size_t i = 0; i < a.n; i++)
-        cout << f[i] << endl;
+//    cout << "f:\n";
+//    for (size_t i = 0; i < a.n; i++)
+//        cout << f[i] << endl;
+
+    f[a.n - (grid->getSizeX() * grid->getSizeY()) / 2 - 1] = 1.0 / (2.0 * M_PI);
+    cout << "Координаты источника: "
+         << grid->xyz[a.n - (grid->getSizeX() * grid->getSizeY()) / 2 - 1].x << " "
+         << grid->xyz[a.n - (grid->getSizeX() * grid->getSizeY()) / 2 - 1].y << " "
+         << grid->xyz[a.n - (grid->getSizeX() * grid->getSizeY()) / 2 - 1].z << endl;
+
 }
 
 void AnomalousField::firstBoundaryCondition()
@@ -430,6 +496,21 @@ void AnomalousField::firstBoundaryCondition()
     size_t sizeXY = sizeX * sizeY;
 
     // Ближняя грань
+    firstBoundaryConditionOnFace(0, sizeXY, sizeX, a.n - sizeXY);
+    // Дальняя грань
+    firstBoundaryConditionOnFace(sizeXY - sizeX, sizeXY, sizeX, a.n - sizeXY);
+    // Левая грань
+    firstBoundaryConditionOnFace(sizeX, sizeXY, sizeXY - 2 * sizeX, a.n - sizeXY, sizeX);
+    // Правая грань
+    firstBoundaryConditionOnFace(2 * sizeX - 1, sizeXY, sizeXY - 2 * sizeX, a.n - sizeXY, sizeX);
+    // Нижняя грань
+    firstBoundaryConditionOnFace(sizeX + 1, sizeX, sizeX - 2, sizeXY - sizeX - 1);
+    // Верхняя грань
+    ///firstBoundaryConditionOnFace(a.n - sizeXY + sizeX + 1, sizeX, sizeX - 2, a.n - sizeX);
+
+
+/*
+    // Ближняя грань
     firstBoundaryConditionOnFace(0, sizeXY, sizeX);
     // Дальняя грань
     firstBoundaryConditionOnFace(sizeXY - sizeX, sizeXY, sizeX);
@@ -441,6 +522,7 @@ void AnomalousField::firstBoundaryCondition()
     firstBoundaryConditionOnFace(sizeX + 1, sizeX, sizeX - 2, sizeXY - sizeX - 1);
     // Верхняя грань
     firstBoundaryConditionOnFace(a.n - sizeXY + sizeX + 1, sizeX, sizeX - 2, a.n - sizeX);
+*/
 }
 
 void AnomalousField::solve(string method, size_t maxIter)

@@ -4,6 +4,7 @@
 #include <iomanip>
 #include "anomalousfield.h"
 #include "grid3D.h"
+#include "hel.h"
 
 using namespace std;
 
@@ -74,15 +75,13 @@ int main()
     u0.getMatrix()->saveElements();
     cout << "Элементы сохранены" << endl;
 
-    u0.solve();
+    u0.solve("LOS_LU");
     cout << "СЛАУ решена" << endl;
 
     u0.saveSolve();
     cout << "Решене сохранено" << endl;
 
     cout << u0.getValue(Coord(10, -10)) << endl;
-
-
 
     cout << u0.getCountFE() << " конечных элементов." << endl;
 
@@ -96,13 +95,10 @@ int main()
         if (c == 'y' or c == 'Y')
             system("cd for_telma && wineconsole go.bat");
     }
-*/
+    */
 
 
-
-
-
-
+    /*
     AnomalousField u;
     u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt", 0);
     u.getGrid()->saveGrid();
@@ -132,6 +128,19 @@ int main()
     double normX_Xe = SLAE::norm(xe, size);
     cout << "К.Э: "<< std::scientific << u.getGrid()->getCountFE() << endl;
     cout << "Относительная погрешность: " << normX_Xe / normXE << endl;
+    */
+
+
+
+    Hel hel;
+    hel.setJ(1.0 / (2.0 * M_PI));
+    hel.setEps(1e-15, 1e-15);
+    hel.setHelCoords(Coord3D(0, 0, 0), Coord3D(0, 0, 0));
+    hel.findNormalField("../normal_field/area.txt", "../normal_field/grid.txt", "../normal_field/sigma.txt");
+    hel.findAnomalousField("../normal_field/area3D.txt", "../normal_field/grid3D.txt", "../normal_field/sigma3D.txt");
+
+
+
 
     return 0;
 }
