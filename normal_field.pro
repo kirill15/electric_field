@@ -23,7 +23,8 @@ HEADERS += \
     anomalousfield.h \
     grid3D.h \
     hel.h \
-    mke_3d.h
+    mke_3d.h \
+    search.h
 
 OTHER_FILES += \
     area.txt \

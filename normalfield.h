@@ -46,7 +46,7 @@ public:
 
 
     // Считывание значений сигмы на слоях из файла
-    int readSigma(string fileWithSigma);
+    int readSigma(std::string fileWithSigma);
 
 
     // Локальная матрица жесткости
@@ -69,17 +69,17 @@ public:
 
     // Решение СЛАУ
     /* Начальное приближение задается внутри (НЕ ОЧЕНЬ) */
-    void solve(string method = "MSG_LLT", size_t maxIter = 1000);
+    void solve(std::string method = "MSG_LLT", size_t maxIter = 1000);
 
     // Сохранить решение СЛАУ
     void saveSolve();
 
 
     // Создание сетки из файлов, описывающих область и ее разбиение
-    int createGrid(string fileWithArea, string fileWithGrid);
+    int createGrid(std::string fileWithArea, std::string fileWithGrid);
 
     // Создание сетки из файлов nvtr, nvkat, rz
-    int createGrid(string nvtr, string nvkat, string rz);
+    int createGrid(std::string nvtr, std::string nvkat, std::string rz);
 
 
     // Создание портрета по сетке
@@ -87,7 +87,7 @@ public:
 
     // Создание портрета из файлов ig, jg
     /******************************** РЕАЛИЗОВАТЬ! *********************************/
-    int createPortrait(string ig, string jg);
+    int createPortrait(std::string ig, std::string jg);
 
 
     // Получить значение σ на слое

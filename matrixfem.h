@@ -33,7 +33,7 @@ public:
     // Считывание портрета матрицы СЛАУ
     /* В файле ig первая запись - размерность матрицы (****НЕ ХАРОШИЙ****)
      */
-    int readPortrait(string ig, string jg);
+    int readPortrait(std::string ig, std::string jg);
 
     // Сохранение портрета матрицы СЛАУ (ig.txt, jg.txt)
     void savePortrait();

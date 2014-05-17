@@ -15,15 +15,7 @@ struct Matrix
 
     Matrix() : ig(nullptr), jg(nullptr), ggl(nullptr), ggu(nullptr), di(nullptr) {}
 
-    ~Matrix()
-    {/*
-        delete[] ig;
-        delete[] jg;
-        delete[] ggl;
-        //if (ggu)
-          //  delete[] ggu;
-        delete[] di;*/
-    }
+    ~Matrix() {}
 };
 
 #endif // MATRIX_H

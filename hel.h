@@ -4,6 +4,9 @@
 #include "normalfield.h"
 #include "anomalousfield.h"
 
+//#include "times.h"
+#include <sys/time.h>
+
 class Hel
 {
 private:
@@ -18,7 +21,9 @@ private:
     Coord3D anode;
     Coord3D cathode;
 
+
 public:
+    Hel();
 
     // Найти основное поле
     void findNormalField(string fileWithArea, string fileWithGrid, string fileWithSigma);
@@ -33,10 +38,14 @@ public:
     void setEps(double epsForV0, double epsForVPlus);
 
     // Задать координаты анода и катода
-    void setHelCoords(Coord3D anode, Coord3D cathode);
+    void setHelCoords(const Coord3D &anode, const Coord3D &cathode);
 
+    // Значение V в точке
+    double getValue(Coord3D p);
 
-    Hel();
+    NormalField *getNormalField();
+
+    AnomalousField *getAnomalousField();
 };
 
 #endif // HEL_H

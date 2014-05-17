@@ -61,7 +61,7 @@ public:
     void createLocalF(const Coord3D p[8], int nvk, double F[8]);
 
     // Считывание значений сигмы на слоях из файла
-    int readSigma(string fileWithSigma);
+    int readSigma(std::string fileWithSigma);
 
 
     // Глобальная СЛАУ
@@ -78,7 +78,7 @@ public:
 
 
     // Создание сетки из файлов, описывающих область и ее разбиение
-    int createGrid(string fileWithArea, string fileWithGrid, size_t fragmentation = 0);
+    int createGrid(std::string fileWithArea, std::string fileWithGrid, size_t fragmentation = 0);
 
     // Создание портрета по сетке
     void createPortrait();

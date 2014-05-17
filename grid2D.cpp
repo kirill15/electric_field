@@ -1,5 +1,6 @@
 #include "grid2D.h"
 
+using namespace std;
 
 
 unsigned Grid2D::getSizeR() const
@@ -205,6 +206,8 @@ void Grid2D::createGrid()
         // Начальный шаг
         double stepR = (koefRazrR != 1) ? (rRight - rLeft) * (koefRazrR - 1.0) / (pow(koefRazrR, numR) - 1.0) : (rRight - rLeft) / numR;
 
+        cout << "hr0=" << stepR << endl;
+
         r[i++] = rLeft;
         for (int j = 1; j <= numR; j++, i++)
         {
@@ -277,7 +280,6 @@ void Grid2D::saveGrid()
 
 int Grid2D::txtToDat(string pathToProgram)
 {
-    //if (execl(pathToProgram.c_str(), "txttodat", NULL) == -1)
     if (system(pathToProgram.c_str()) == -1)
     {
         cerr << "Ошибка вызова txttodat" << endl;

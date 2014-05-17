@@ -9,9 +9,6 @@
 
 #include "grid2D.h"
 
-using namespace std;
-
-
 
 // Тип - xyz-координата точки
 class Coord3D
@@ -47,9 +44,9 @@ private:
     unsigned l; // Число подобластей
     int **areas; // Области (семерки целых чисел)
 
-    vector < pair <int, double> > partitionsX; // Пары <Количество подынтервалов по оси x> <Коэффициент разрядки>
-    vector < pair <int, double> > partitionsY; // Пары <Количество подынтервалов по оси y> <Коэффициент разрядки>
-    vector < pair <int, double> > partitionsZ; // Пары <Количество подынтервалов по оси z> <Коэффициент разрядки>
+    std::vector < std::pair <int, double> > partitionsX; // Пары <Количество подынтервалов по оси x> <Коэффициент разрядки>
+    std::vector < std::pair <int, double> > partitionsY; // Пары <Количество подынтервалов по оси y> <Коэффициент разрядки>
+    std::vector < std::pair <int, double> > partitionsZ; // Пары <Количество подынтервалов по оси z> <Коэффициент разрядки>
 
     uint countPoints; // Количество узлов
     uint countFE; // Количество КЭ
@@ -57,11 +54,6 @@ private:
     unsigned sizeX; // Количество узлов по оси x
     unsigned sizeY; // Количество узлов по оси y
     unsigned sizeZ; // Количество узлов по оси z
-
-    int compare (const void * a, const void * b)
-    {
-      return ( *(double*)a - *(double*)b );
-    }
 
 public:
     // Массивы, описывающие КЭ:
@@ -106,7 +98,7 @@ public:
      *
      * Возвращает 0 в случае успешного выполнения
      */
-    int readArea(string fileWithArea);
+    int readArea(std::string fileWithArea);
 
 
 
@@ -117,7 +109,7 @@ public:
      *
      * Возвращает 0 в случае успешного выполнения
      */
-    int readPartitions(string fileWithGrid, size_t fragmentation = 0);
+    int readPartitions(std::string fileWithGrid, size_t fragmentation = 0);
 
 
 
@@ -136,12 +128,8 @@ public:
     // Возвращает количество К.Э.
     unsigned getCountFE() const;
 
-
+    // Возвращает массив nvtr (вершины конечных элементов)
     unsigned **getNvtr() const;
-
-
-
-
 
 
 

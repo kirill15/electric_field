@@ -1,5 +1,8 @@
 #include "mke_3d.h"
 
+using namespace std;
+
+
 Mke3D::Mke3D() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
 {
 }
@@ -36,16 +39,20 @@ void Mke3D::setMatrix(MatrixFEM *value)
 }
 double Mke3D::GetUg(Coord3D p, int nvk)
 {
-    //return p.x * p.x * p.y *p.y * p.z * p.z;
+    return p.x*p.x*p.x*p.x * p.y*p.y*p.y*p.y * p.z*p.z*p.z*p.z;
+    //return p.x*p.x*p.x * p.y*p.y*p.y * p.z*p.z*p.z;
+    //return p.x * p.x  *  p.y *p.y  *  p.z * p.z;
     //return exp(p.x * p.y * p.z);
-    return p.x * p.y * p.z;
+    //return p.x * p.y * p.z;
 }
 
 double Mke3D::getF(Coord3D p, int nvk)
 {
+    return -12.0*p.x*p.x*p.y*p.y*p.z*p.z * (p.y*p.y * p.z*p.z  +  p.x*p.x * p.z*p.z  +  p.x*p.x * p.y*p.y);
+    //return -6.0*p.x*p.y*p.z * (p.y*p.y * p.z*p.z  +  p.x*p.x * p.z*p.z  +  p.x*p.x * p.y*p.y);
     //return -2.0 * (p.y*p.y * p.z*p.z  +  p.x*p.x * p.z*p.z  +  p.x*p.x * p.y*p.y);
     //return -2.0 * exp(p.x * p.y * p.z) * (p.y*p.y * p.z*p.z  +  p.x*p.x * p.z*p.z  +  p.x*p.x * p.y*p.y);
-    return 0.0;
+    //return 0.0;
 }
 
 void Mke3D::localG_1D(double G[2][2], double h)

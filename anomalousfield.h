@@ -5,6 +5,8 @@
 #include "matrixfem.h"
 #include "normalfield.h"
 
+using std::string;
+
 class AnomalousField
 {
 private:
@@ -23,21 +25,22 @@ private:
 
     double eps; // Точность решения СЛАУ (По-умолчанию 1e-15)
 
-    double *sigmas; // Массив значений сигм (индекс - номер подобласти)
+    double **sigmas; // Массив значений сигм (индекс - номер подобласти)
+    double **rotations; // Матрицы поворота для сигм
 
 private:
     // Значение Ug |||||||||||||||||| Для теста |||||||||||||||||||
     /* rz::Coord - координата узла
      * nk::int - номер в каталоге первого краевого условия
      */
-    double GetUg(Coord3D p, int nvk);
+//    double GetUg(Coord3D p, int nvk);
 
     // V0(x, y, z)
     double getV0(Coord3D p);
 
 
     // Значение F |||||||||||||||||| Для теста |||||||||||||||||||
-    double getF(Coord3D p, int nvk);
+//    double getF(Coord3D p, int nvk);
 
 
     // Матрица жесткости одномерного элемента
@@ -46,7 +49,7 @@ private:
     // Матрица массы одномерного элемента
     void localM_1D(double M[2][2], double h);
 
-    // Учет первого краевого на гране
+    // Учет первого краевого на грани
     /* startIntex::size_t - стартовый узел
      * stepOutside::size_t - размер шага для перехода на следующий "уровень"
      * sizeInside::size_t - размер ребра
@@ -65,12 +68,12 @@ public:
      * nvk :: int - номер в каталоге
      * G :: double[][] - локальная матрица жесткости (возвращаемое значение)
      */
-    void createLocalG(const Coord3D p[8], int nvk, double G[8][8]);
+    void createLocalG(const Coord3D p[8], double *G[8][8]);
 
-    // Локальный вектор правой части |||||||||||||||||| Для теста |||||||||||||||||||
-    void createLocalF(const Coord3D p[8], int nvk, double G[8][8], double F[8]);
+    // Локальный вектор правой части
+    void createLocalF(const Coord3D p[8], int nvk, double *G[8][8], double F[8]);
 
-    // Считывание значений сигмы на слоях из файла
+    // Считывание значений сигмы (и ее матрицы поворота) из файла
     int readSigma(string fileWithSigma);
 
 
@@ -81,7 +84,11 @@ public:
     void firstBoundaryCondition();
 
     // Решение СЛАУ
-    void solve(string method = "MSG_LLT", size_t maxIter = 1000);
+    /* method :: string - метод решения СЛАУ
+     * maxIter :: size_t - максимальное число итераций
+     * x0 :: double - начальное приближение (x0, x0, x0,...,x0)
+     */
+    void solve(string method = "MSG_LLT", size_t maxIter = 1000, double x0 = 0.0001);
 
 
     // Создание сетки из файлов, описывающих область и ее разбиение
@@ -94,7 +101,7 @@ public:
     double *getV(unsigned &size) const;
 
     // Задать координаты ГЭЛа
-    void setSource(Coord3D plus, Coord3D minus);
+    void setSource(const Coord3D &plus, const Coord3D &minus);
 
     // Задать основное поле
     void setNormalField(NormalField *v);

@@ -11,10 +11,6 @@
 #include <cmath>
 
 
-
-using namespace std;
-
-
 class SLAE
 {
 private:
@@ -72,7 +68,7 @@ public:
 
 
     // Итерационный шаг для матрицы c предобуславливанием неполным LLT-разложением (МСГ)
-    static void iterationMSGLLT(Matrix &a, Matrix &l, double *x, double *r, double *z);
+    static void iterationMSGLLT(Matrix &a, Matrix &l, double *x, double *r, double *z, double *temp1, double *temp2);
 
     // МСГ для матрицы c предобуславливанием неполным LLT-разложением
     static int solveMSG_LLT(Matrix &a, double *f, double *x, double eps, int maxIter);

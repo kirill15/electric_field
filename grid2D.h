@@ -9,10 +9,7 @@
 #include <vector>
 #include <cmath>
 #include <unistd.h>
-
 #include <iostream>
-
-using namespace std;
 
 // Тип - rz-координата точки
 struct Coord
@@ -37,8 +34,8 @@ private:
     unsigned l; // Число подобластей
     int **areas; // Области (пятерки целых чисел)
 
-    vector < pair <int, double> > partitionsR; // Пары <Количество подынтервалов по оси r> <Коэффициент разрядки>
-    vector < pair <int, double> > partitionsZ; // Пары <Количество подынтервалов по оси z> <Коэффициент разрядки>
+    std::vector < std::pair <int, double> > partitionsR; // Пары <Количество подынтервалов по оси r> <Коэффициент разрядки>
+    std::vector < std::pair <int, double> > partitionsZ; // Пары <Количество подынтервалов по оси z> <Коэффициент разрядки>
 
     uint countPoints; // Количество узлов
     uint countFE; // Количество КЭ
@@ -80,7 +77,7 @@ public:
      *
      * Возвращает 0 в случае успешного выполнения
      */
-    int readArea(string fileWithArea);
+    int readArea(std::string fileWithArea);
 
 
 
@@ -91,7 +88,7 @@ public:
      *
      * Возвращает 0 в случае успешного выполнения
      */
-    int readPartitions(string fileWithGrid);
+    int readPartitions(std::string fileWithGrid);
 
 
 
@@ -120,7 +117,7 @@ public:
     * pathToProgram :: string - Путь к программе конвертации
     * Возвращает 0 в случае успешного выполнения
     */
-    int txtToDat(string pathToProgram);
+    int txtToDat(std::string pathToProgram);
 
 
     // Возвращает номер подобласти по координате (проверка только по z)

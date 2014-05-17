@@ -1,5 +1,8 @@
 #include "slae.h"
 
+using namespace std;
+
+
 SLAE::SLAE()
 {
 }
@@ -266,11 +269,8 @@ double SLAE::iterationLU(Matrix &a, Matrix &lu, double *x, double *r, double *z,
 }
 
 
-void SLAE::iterationMSGLLT(Matrix &a, Matrix &l, double *x, double *r, double *z)
+void SLAE::iterationMSGLLT(Matrix &a, Matrix &l, double *x, double *r, double *z, double *temp1, double *temp2)
 {
-    static double *temp1 = new double[a.n],
-                  *temp2 = new double[a.n];
-
     // M^-1 * r(k-1)
     forwardStrokeLLT(l, r, temp1);
     returnStrokeLLT(l, temp1, temp2);
@@ -369,7 +369,10 @@ int SLAE::solveMSG_LLT(Matrix &a, double *f, double *x, double eps, int maxIter)
     forwardStrokeLLT(l, r, z);      // *
     returnStrokeLLT(l, z, z);		// z = M^-1 * r
 
-    iterationMSGLLT(a, l, x, r, z);	// Первая итерация
+    double *temp1 = new double[a.n], // Временные
+           *temp2 = new double[a.n]; // переменные
+
+    iterationMSGLLT(a, l, x, r, z, temp1, temp2);	// Первая итерация
 
     double residual = norm(r, a.n) / norm(f, a.n);
 
@@ -378,7 +381,7 @@ int SLAE::solveMSG_LLT(Matrix &a, double *f, double *x, double eps, int maxIter)
     int i;
     for(i = 2; i <= maxIter && residual > eps; i++)
     {
-        iterationMSGLLT(a, l, x, r, z);
+        iterationMSGLLT(a, l, x, r, z, temp1, temp2);
 
         residual = norm(r, a.n) / norm(f, a.n);
 
@@ -386,10 +389,12 @@ int SLAE::solveMSG_LLT(Matrix &a, double *f, double *x, double eps, int maxIter)
     }
 
     // Освобождаем память
-    delete l.di;
-    delete l.ggl;
-    delete r;
-    delete z;
+    delete[] l.di;
+    delete[] l.ggl;
+    delete[] r;
+    delete[] z;
+    delete[] temp1;
+    delete[] temp2;
 
     return i - 1;	// Возвращаем число итераций
 }

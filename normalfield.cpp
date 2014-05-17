@@ -1,6 +1,8 @@
 #include "normalfield.h"
 #include "slae.h"
 
+using namespace std;
+
 
 NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
 {
@@ -161,7 +163,7 @@ void NormalField::createGlobalRightPart()
 
 void NormalField::firstBoundaryCondition()
 {
-    Matrix a =  matrix->matrix();
+    Matrix a = matrix->matrix();
 
     /// Задаем однородные краевые условия снизу
     unsigned sizeR = grid->getSizeR();
@@ -295,8 +297,6 @@ double NormalField::getSigma(double z)
 }
 
 
-
-
 double NormalField::getValue(Coord rz)
 {
     Coord *coords = grid->rz;
@@ -307,9 +307,29 @@ double NormalField::getValue(Coord rz)
         throw "Point does not lie in the field of";
 
     // Получаем номера координатных линий
-    size_t p, s, i; /* p - индекс координаты по Х, s - по Y, i - номер узла (на левой границе) */
-    for (p = 1; p < sizeX && rz.r > coords[p].r; p++);
-    for (i = 0, s = 0; s < sizeY && rz.z > coords[i].z; i += sizeX, s++);
+    size_t p, s, i; // p - индекс координаты по Х, s - по Y, i - номер узла (на левой границе)
+    size_t first = 1, last = sizeX; // last - номер элемента в массиве, СЛЕДУЮЩЕГО ЗА последним
+    while (first < last)
+    {
+        size_t mid = first + (last - first) / 2;
+        if (rz.r <= coords[mid].r)
+            last = mid;
+        else
+            first = mid + 1;
+    }
+    p = last;
+
+    first = 1, last = sizeY;
+    while (first < last)
+    {
+        size_t mid = first + (last - first) / 2;
+        if (rz.z <= coords[mid * sizeX].z)
+            last = mid;
+        else
+            first = mid + 1;
+    }
+    i = last * sizeX;
+    s = last;
 
     // Получаем глобальные номера базисных функций
     size_t k[4];
@@ -368,3 +388,61 @@ void NormalField::setEps(double value)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* //Поиск элемента перебором
+double NormalField::getValue(Coord rz)
+{
+    Coord *coords = grid->rz;
+    size_t sizeX = grid->getSizeR();
+    size_t sizeY = grid->getSizeZ();
+
+    if (rz.r < coords[0].r || rz.r > coords[sizeX - 1].r || rz.z < coords[0].z || rz.z > coords[sizeX * sizeY - 1].z)
+        throw "Point does not lie in the field of";
+
+    // Получаем номера координатных линий
+    size_t p, s, i; // p - индекс координаты по Х, s - по Y, i - номер узла (на левой границе)
+    for (p = 1; p < sizeX && rz.r > coords[p].r; p++);
+    for (i = 0, s = 0; s < sizeY && rz.z > coords[i].z; i += sizeX, s++);
+
+    ofstream file("ttLine", ios_base::app);
+    file << p << " " << s << " " << i << endl;
+    file.close();
+
+    // Получаем глобальные номера базисных функций
+    size_t k[4];
+    k[1] = (s - 1) * sizeX + p;
+    k[0] = k[1] - 1;
+    k[3] = s * sizeX + p;
+    k[2] = k[3] - 1;
+
+    // Считаем значения базисных функций на КЭ
+    double h = coords[p].r - coords[p - 1].r;
+    double R1 = (coords[p].r - rz.r) / h;
+    double R2 = (rz.r - coords[p - 1].r) / h;
+    h = coords[i].z - coords[i - 1].z;
+    double Z1 = (coords[i].z - rz.z) / h;
+    double Z2 = (rz.z - coords[i - 1].z) / h;
+
+    return v[k[0]] * R1*Z1  +  v[k[1]] * R2*Z1  +  v[k[2]] * R1*Z2  +  v[k[3]] * R2*Z2;
+}
+*/

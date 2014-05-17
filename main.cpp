@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
-#include "grid3D.h"
 #include "hel.h"
+//#include <sys/time.h>
 
 //#include "mke_3d.h"
 
@@ -32,16 +32,18 @@ void test(double *v, Coord *rz, size_t size)
 
 double getXYZExact(Coord3D p)
 {
-    //return p.x * p.x * p.y *p.y * p.z * p.z;
+    //return p.x * p.y * p.z;
     //return exp(p.x * p.y * p.z);
-    return p.x * p.y * p.z;
+    //return p.x*p.x * p.y*p.y * p.z*p.z;
+    //return p.x*p.x*p.x * p.y*p.y*p.y * p.z*p.z*p.z;
+    return p.x*p.x*p.x*p.x * p.y*p.y*p.y*p.y * p.z*p.z*p.z*p.z;
 }
 
 
 
 int main()
 {
-    /*
+/*
     NormalField u0;
 
     if (u0.createGrid("../normal_field/area.txt", "../normal_field/grid.txt") == 0)
@@ -99,7 +101,7 @@ int main()
 
 /*
     Mke3D u;
-    u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt", 0);
+    u.createGrid("../normal_field/area3D.txt", "../normal_field/grid3D.txt", 2);
     u.getGrid()->saveGrid();
     u.createPortrait();
     u.getMatrix()->savePortrait();
@@ -114,12 +116,12 @@ int main()
 
 
 
-    cout << "( 100.0, 100.0,  -1.0)\t" << u.getValue(Coord3D(100.0, 100.0, -1.0)) << endl;
-    cout << "( 200.0, 200,0,  -1.0)\t" << u.getValue(Coord3D(200.0, 200.0, -1.0)) << endl;
-    cout << "(300.0,  300.0,  -1.0)\t" << u.getValue(Coord3D(300.0, 300.0, -1.0)) << endl;
-    cout << "(500.0,  500.0,  -1.0)\t" << u.getValue(Coord3D(500.0, 500.0, -1.0)) << endl;
-    cout << "(1000.0, 1000.0, -1.0)\t" << u.getValue(Coord3D(1000.0, 1000.0, -1.0)) << endl;
-    cout << "(-8189.87, 6068.66, -1)\t" << u.getValue(Coord3D(-8189.87, 6068.66, -1)) << endl;
+//    cout << "( 100.0, 100.0,  -1.0)\t" << u.getValue(Coord3D(100.0, 100.0, -1.0)) << endl;
+//    cout << "( 200.0, 200,0,  -1.0)\t" << u.getValue(Coord3D(200.0, 200.0, -1.0)) << endl;
+//    cout << "(300.0,  300.0,  -1.0)\t" << u.getValue(Coord3D(300.0, 300.0, -1.0)) << endl;
+//    cout << "(500.0,  500.0,  -1.0)\t" << u.getValue(Coord3D(500.0, 500.0, -1.0)) << endl;
+//    cout << "(1000.0, 1000.0, -1.0)\t" << u.getValue(Coord3D(1000.0, 1000.0, -1.0)) << endl;
+//    cout << "(-8189.87, 6068.66, -1)\t" << u.getValue(Coord3D(-8189.87, 6068.66, -1)) << endl;
 
 
 
@@ -144,15 +146,21 @@ int main()
 
 
 
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
+
     Hel hel;
     hel.setJ(1.0 / (2.0 * M_PI));
     hel.setEps(1e-15, 1e-15);
-    hel.setHelCoords(Coord3D(0, 0, 0), Coord3D(0, 0, 0));
+    hel.setHelCoords(Coord3D(50, 0, 0), Coord3D(-50, 0, 0));
     hel.findNormalField("../normal_field/area.txt", "../normal_field/grid.txt", "../normal_field/sigma.txt");
     hel.findAnomalousField("../normal_field/area3D.txt", "../normal_field/grid3D.txt", "../normal_field/sigma3D.txt");
 
+    gettimeofday(&t2, NULL);
+    cout << "Время: " << (long long)t2.tv_sec * 1000 + t2.tv_usec / 1000 - (long long)t1.tv_sec * 1000 + t1.tv_usec / 1000 << " мс" << endl;
 
-
+    for (size_t i = 0; i < 10; i++)
+        cout << std::fixed << 30 * i << ", " << 30 * i << ": " << std::scientific << hel.getAnomalousField()->getValue(Coord3D(30 * i, 30 * i , 0)) << endl;
 
     return 0;
 }

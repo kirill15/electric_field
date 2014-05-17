@@ -1,5 +1,8 @@
 #include "hel.h"
 
+using namespace std;
+
+
 void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileWithSigma)
 {
     vZero.setEps(epsVZero);
@@ -55,6 +58,20 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
     */
 
 
+/*
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
+    for (int i = 0; i < 15000; i+=10)
+        for (int j = 0; j < 9999; j+=10)
+            cout << vZero.getValue(Coord(i+1.0, -j-1.0)) << endl;
+    gettimeofday(&t2, NULL);
+    cout << t2.tv_sec - t1.tv_sec << endl;
+    cout << t2.tv_usec - t1.tv_usec << endl;
+    return;
+*/
+
+
+
     cout << "10, 10, -50:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -50)) << endl;
     cout << "10, 10, -150:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -150)) << endl;
     cout << "10, 10, -250:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -250)) << endl;
@@ -78,38 +95,52 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
 {
     vPlus.setEps(epsVPlus);
 
+    cout << "--Создание сетки" << endl;
     if (vPlus.createGrid(fileWithArea, fileWithGrid, 0) == 0)
-        cout << "--Сетка создана" << endl;
+        cout << "----ОК (" << vPlus.getGrid()->getCountFE() << " К.Э.)" << endl;
 
-    vPlus.getGrid()->saveGrid();
-    cout << "----Сетка сохранена" << endl;
+//    vPlus.getGrid()->saveGrid();
+//    cout << "----Сетка сохранена" << endl;
 
+    cout << "--Генерация портрета" << endl;
     vPlus.createPortrait();
-    cout << "--Портрет сгенерирован" << endl;
+    cout << "----OK" << endl;
 
-    vPlus.getMatrix()->savePortrait();
-    cout << "----Портрет сохранен" << endl;
+//    vPlus.getMatrix()->savePortrait();
+//    cout << "----Портрет сохранен" << endl;
 
     vPlus.setNormalField(&vZero);
 
     vPlus.setSource(anode, cathode);
 
-    if (vPlus.readSigma(fileWithSigma) == 0)
-        cout << "--Сигмы считаны" << endl;
+    if (vPlus.readSigma(fileWithSigma) != 0)
+        cout << "--Ошибка чтения сигм!" << endl;
 
+    cout << "--Сборка глобальной СЛАУ" << endl;
     vPlus.createGlobalSLAE();
-    cout << "--Глобальная СЛАУ собрана" << endl;
+    cout << "----OK" << endl;
 
+//    vPlus.getMatrix()->saveElements();
+
+    cout << "--Учет краевых условий" << endl;
     vPlus.firstBoundaryCondition();
-    cout << "--Первые краевые учтены" << endl;
+    cout << "----OK" << endl;
 
-    vPlus.getMatrix()->saveElements();
+//    vPlus.getMatrix()->saveElements();
 
-    vPlus.solve();
-    cout << "--СЛАУ решена" << endl;
+    cout << "--Решение СЛАУ" << endl;
+//    vPlus.solve("LOS_LU", 2000);
+    vPlus.solve("MSG_LLT", 2000);
+    cout << "----OK" << endl;
 
 
 
+
+
+
+
+
+/*
     cout << "10, 10, -50:\t" << vPlus.getValue(Coord3D(10, 10, -50)) << endl;
     cout << "10, 10, -150:\t" << vPlus.getValue(Coord3D(10, 10, -150)) << endl;
     cout << "10, 10, -250:\t" << vPlus.getValue(Coord3D(10, 10, -250)) << endl;
@@ -117,13 +148,13 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
     cout << "200, 200, -150:\t" << vPlus.getValue(Coord3D(200, 200, -150)) << endl;
     cout << "200, 200, -250:\t" << vPlus.getValue(Coord3D(200, 200, -250)) << endl;
     cout << "150, 150, -1000:\t" << vPlus.getValue(Coord3D(150, 150, -1000)) << endl;
+*/
 
 
 
 
 
-
-
+/*
     ofstream file("V+.csv");
     size_t size;
     double *x = vPlus.getV(size);
@@ -141,6 +172,8 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
 //    file << "||u*-u|| / ||u*||:;" << sqrt(sum) / sqrt(sumX) << endl;
 
     file.close();
+*/
+
 /*
     double xx[5];
     xx[0] = fabs(vPlus.getValue(Coord3D(100.0, 100.0, 0.0)) - 1.0 / (2.0 * M_PI * sqrt(100*100 + 100*100) * 0.01));
@@ -157,7 +190,7 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
 
     cout << "Норма: " << std::scientific << sqrt(xx[0]*xx[0] + xx[1]*xx[1] + xx[2]*xx[2] + xx[3]*xx[3] + xx[4]*xx[4]) << endl;
 
-    cout << "(): " << vPlus.getValue(Coord3D(10, 10, -147.419)) << endl;*/
+    cout << "(10, 10, -147.419): " << vPlus.getValue(Coord3D(10, 10, -147.419)) << endl;*/
 }
 
 void Hel::setJ(double J)
@@ -171,12 +204,34 @@ void Hel::setEps(double epsForV0, double epsForVPlus)
     epsVPlus = epsForVPlus;
 }
 
-void Hel::setHelCoords(Coord3D anode, Coord3D cathode)
+void Hel::setHelCoords(const Coord3D &anode, const Coord3D &cathode)
 {
     this->anode = anode;
     this->cathode = cathode;
 }
 
+double Hel::getValue(Coord3D p)
+{
+    return vZero.getValue(Coord(sqrt(p.x*p.x + p.y*p.y), p.z)) + vPlus.getValue(p);
+}
+
+NormalField *Hel::getNormalField()
+{
+    return &vZero;
+}
+
+AnomalousField *Hel::getAnomalousField()
+{
+    return &vPlus;
+}
+
 Hel::Hel()
 {
 }
+
+
+
+
+
+
+

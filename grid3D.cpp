@@ -1,5 +1,8 @@
 #include "grid3D.h"
 
+using namespace std;
+
+
 unsigned Grid3D::getAreaNumber(int xLeft, int xRight, int yNear, int yFar, int zLow, int zTop)
 {
     for (uint i = 0; i < l; i++)

@@ -1,5 +1,8 @@
 #include "matrixfem.h"
 
+using namespace std;
+
+
 MatrixFEM::MatrixFEM()
 {
 }
