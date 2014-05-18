@@ -41,7 +41,9 @@ public:
     void setHelCoords(const Coord3D &anode, const Coord3D &cathode);
 
     // Значение V в точке
-    double getValue(Coord3D p);
+    /* isNotAnomalous::bool - поле без учета аномалий
+     */
+    double getValue(Coord3D p, bool isNotAnomalous = false);
 
     NormalField *getNormalField();
 

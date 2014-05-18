@@ -210,9 +210,11 @@ void Hel::setHelCoords(const Coord3D &anode, const Coord3D &cathode)
     this->cathode = cathode;
 }
 
-double Hel::getValue(Coord3D p)
+double Hel::getValue(Coord3D p, bool isNotAnomalous)
 {
-    return vZero.getValue(Coord(sqrt(p.x*p.x + p.y*p.y), p.z)) + vPlus.getValue(p);
+    return vZero.getValue(Coord(sqrt((p.x - anode.x) * (p.x - anode.x)  +  (p.y - anode.y) * (p.y - anode.y)), p.z))
+         - vZero.getValue(Coord(sqrt((p.x - cathode.x) * (p.x - cathode.x)  +  (p.y - cathode.y) * (p.y - cathode.y)), p.z))
+         + ((isNotAnomalous) ? 0.0 : vPlus.getValue(p));
 }
 
 NormalField *Hel::getNormalField()

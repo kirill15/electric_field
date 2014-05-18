@@ -152,16 +152,21 @@ int main()
     Hel hel;
     hel.setJ(1.0 / (2.0 * M_PI));
     hel.setEps(1e-15, 1e-15);
-    hel.setHelCoords(Coord3D(50, 0, 0), Coord3D(-50, 0, 0));
+    hel.setHelCoords(Coord3D(400, 0, 0), Coord3D(-400, 0, 0));
     hel.findNormalField("../normal_field/area.txt", "../normal_field/grid.txt", "../normal_field/sigma.txt");
     hel.findAnomalousField("../normal_field/area3D.txt", "../normal_field/grid3D.txt", "../normal_field/sigma3D.txt");
 
     gettimeofday(&t2, NULL);
     cout << "Время: " << (long long)t2.tv_sec * 1000 + t2.tv_usec / 1000 - (long long)t1.tv_sec * 1000 + t1.tv_usec / 1000 << " мс" << endl;
 
-    for (size_t i = 0; i < 10; i++)
-        cout << std::fixed << 30 * i << ", " << 30 * i << ": " << std::scientific << hel.getAnomalousField()->getValue(Coord3D(30 * i, 30 * i , 0)) << endl;
-
+    ofstream graf("graf1");
+    bool isNOTanomalous = true;
+    for (int i = 0; i <= 512; i+=2)
+    {
+        int koord1 = -8000 + 31.25 * i;
+        int koord2 = -8000 + 31.25 * (i + 1);
+        graf << std::fixed << (koord2 + koord1) / 2.0 << "\t" << std::scientific << hel.getValue(Coord3D(koord1, 0, 0), isNOTanomalous) - hel.getValue(Coord3D(koord2, 0, 0), isNOTanomalous) << endl;
+    }
     return 0;
 }
 

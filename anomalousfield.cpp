@@ -567,10 +567,10 @@ void AnomalousField::createGlobalSLAE()
             f[nvtr[k][i]] += F[i];
     }
 
-    ofstream file("fff");
-    for (size_t i = 0; i < a.n; i++)
-        file << f[i] << endl;
-    file.close();
+//    ofstream file("fff");
+//    for (size_t i = 0; i < a.n; i++)
+//        file << f[i] << endl;
+//    file.close();
 
 /*
     f[a.n - (grid->getSizeX() * grid->getSizeY()) / 2 - 1] = 1.0;
