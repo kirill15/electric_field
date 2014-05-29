@@ -238,7 +238,7 @@ void NormalField::solve(string method, size_t maxIter)
     else if (method == "LOS_LU")
         SLAE::solveLOS_LU(matrix->matrix(), f, v, eps, maxIter);
 
-    matrix->saveElements();
+//    matrix->saveElements();
 }
 
 void NormalField::saveSolve()

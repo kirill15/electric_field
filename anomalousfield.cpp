@@ -233,10 +233,10 @@ double AnomalousField::getValue(Coord3D xyz)
     size_t sizeXY = sizeX * sizeY;
 
     // Получаем номера координатных линий
-    size_t p, s, l, i; /* p - индекс координаты по Х, s - по Y, v - по Z */
+    size_t p, s, l, i; /* p - индекс координаты по Х, s - по Y, l - по Z */
     for (p = 1; p < sizeX && xyz.x > coords[p].x; p++);
-    for (s = 0, i = 0; i < sizeY && xyz.y > coords[s].y; s += sizeX, i++);
-    for (l = 0, i = 0; i < sizeZ && xyz.z > coords[l].z; l += sizeXY, i++);
+    for (s = sizeX, i = 0; i < sizeY && xyz.y > coords[s].y; s += sizeX, i++);
+    for (l = sizeXY, i = 0; i < sizeZ && xyz.z > coords[l].z; l += sizeXY, i++);
 
     // Получаем глобальные номера базисных функций
     size_t k[8];
@@ -567,10 +567,6 @@ void AnomalousField::createGlobalSLAE()
             f[nvtr[k][i]] += F[i];
     }
 
-//    ofstream file("fff");
-//    for (size_t i = 0; i < a.n; i++)
-//        file << f[i] << endl;
-//    file.close();
 
 /*
     f[a.n - (grid->getSizeX() * grid->getSizeY()) / 2 - 1] = 1.0;

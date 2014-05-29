@@ -117,7 +117,7 @@ public:
     * pathToProgram :: string - Путь к программе конвертации
     * Возвращает 0 в случае успешного выполнения
     */
-    int txtToDat(std::string pathToProgram);
+    static int txtToDat(std::string pathToProgram);
 
 
     // Возвращает номер подобласти по координате (проверка только по z)

@@ -4,7 +4,6 @@
 #include "normalfield.h"
 #include "anomalousfield.h"
 
-//#include "times.h"
 #include <sys/time.h>
 
 class Hel
@@ -26,7 +25,7 @@ public:
     Hel();
 
     // Найти основное поле
-    void findNormalField(string fileWithArea, string fileWithGrid, string fileWithSigma);
+    void findNormalField(string fileWithArea, string fileWithGrid, string fileWithSigma, bool isSaveFiles = false);
 
     // Найти добавочное поле
     void findAnomalousField(string fileWithArea, string fileWithGrid, string fileWithSigma);
@@ -48,6 +47,9 @@ public:
     NormalField *getNormalField();
 
     AnomalousField *getAnomalousField();
+
+    // Сохранение сетки и решения в сечении плоскостью XZ
+    void CreateSectionXZ(double y);
 };
 
 #endif // HEL_H

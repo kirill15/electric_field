@@ -3,7 +3,7 @@
 using namespace std;
 
 
-void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileWithSigma)
+void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileWithSigma, bool isSaveFiles)
 {
     vZero.setEps(epsVZero);
 
@@ -12,14 +12,20 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
     if (vZero.createGrid(fileWithArea, fileWithGrid) == 0)
         cout << "--Сетка создана" << endl;
 
-    vZero.getGrid()->saveGrid();
-    cout << "----Сетка сохранена" << endl;
+    if (isSaveFiles)
+    {
+        vZero.getGrid()->saveGrid();
+        cout << "----Сетка сохранена" << endl;
+    }
 
     vZero.createPortrait();
     cout << "--Портрет сгенерирован" << endl;
 
-    vZero.getMatrix()->savePortrait();
-    cout << "----Портрет сохранен" << endl;
+    if (isSaveFiles)
+    {
+        vZero.getMatrix()->savePortrait();
+        cout << "----Портрет сохранен" << endl;
+    }
 
     if (vZero.readSigma(fileWithSigma) == 0)
         cout << "--Сигмы считаны" << endl;
@@ -39,12 +45,12 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
     vZero.solve();
     cout << "--СЛАУ решена" << endl;
 
-    vZero.saveSolve();
-    cout << "----Решене сохранено" << endl;
-
-//    cout << vZero.getValue(Coord(22500.347219543, -200)) << endl;
-
-/*
+    if (isSaveFiles)
+    {
+        vZero.saveSolve();
+        cout << "----Решене сохранено" << endl;
+    }
+    /*
     if (vZero.getGrid()->txtToDat("../normal_field/txtToDat/txttodat") == 0)
     {
         cout << "Сетка сохранена в бинарном виде" << endl;
@@ -55,40 +61,16 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
         if (c == 'y' || c == 'Y')
             system("cd for_telma && wineconsole go.bat");
     }
-    */
-
-
-/*
-    struct timeval t1, t2;
-    gettimeofday(&t1, NULL);
-    for (int i = 0; i < 15000; i+=10)
-        for (int j = 0; j < 9999; j+=10)
-            cout << vZero.getValue(Coord(i+1.0, -j-1.0)) << endl;
-    gettimeofday(&t2, NULL);
-    cout << t2.tv_sec - t1.tv_sec << endl;
-    cout << t2.tv_usec - t1.tv_usec << endl;
-    return;
 */
 
 
-
     cout << "10, 10, -50:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -50)) << endl;
-    cout << "10, 10, -150:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -150)) << endl;
-    cout << "10, 10, -250:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -250)) << endl;
-    cout << "70, 70, -200:\t" << vZero.getValue(Coord(sqrt(70*70 + 70*70), -200)) << endl;
-    cout << "200, 200, -150:\t" << vZero.getValue(Coord(sqrt(200*200 + 200*200), -150)) << endl;
-    cout << "200, 200, -250:\t" << vZero.getValue(Coord(sqrt(200*200 + 200*200), -250)) << endl;
-    cout << "150, 150, -1000:\t" << vZero.getValue(Coord(sqrt(150*150 + 150*150), -1000)) << endl;
-
-    ofstream file("V0.csv");
-    size_t size;
-    double *x = vZero.getV(size);
-    Coord *p = vZero.getGrid()->rz;
-    for (size_t i = 0; i < size; i++)
-    {
-        file<< p[i].r << ";" << p[i].z << ";" << x[i] << endl;
-    }
-    file.close();
+//    cout << "10, 10, -150:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -150)) << endl;
+//    cout << "10, 10, -250:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -250)) << endl;
+//    cout << "70, 70, -200:\t" << vZero.getValue(Coord(sqrt(70*70 + 70*70), -200)) << endl;
+//    cout << "200, 200, -150:\t" << vZero.getValue(Coord(sqrt(200*200 + 200*200), -150)) << endl;
+//    cout << "200, 200, -250:\t" << vZero.getValue(Coord(sqrt(200*200 + 200*200), -250)) << endl;
+//    cout << "150, 150, -1000:\t" << vZero.getValue(Coord(sqrt(150*150 + 150*150), -1000)) << endl;
 }
 
 void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fileWithSigma)
@@ -119,8 +101,6 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
     cout << "--Сборка глобальной СЛАУ" << endl;
     vPlus.createGlobalSLAE();
     cout << "----OK" << endl;
-
-//    vPlus.getMatrix()->saveElements();
 
     cout << "--Учет краевых условий" << endl;
     vPlus.firstBoundaryCondition();
@@ -225,6 +205,64 @@ NormalField *Hel::getNormalField()
 AnomalousField *Hel::getAnomalousField()
 {
     return &vPlus;
+}
+
+void Hel::CreateSectionXZ(double y)
+{
+    Grid3D *grid3d = vPlus.getGrid();
+    Coord3D *coords = grid3d->xyz;
+    size_t *nvkat = grid3d->nvkat;
+
+    size_t sizeX = grid3d->getSizeX();
+    size_t sizeY = grid3d->getSizeY();
+    size_t sizeZ = grid3d->getSizeZ();
+    size_t sizeXY = sizeX * sizeY;
+    size_t countFE_XY = (sizeX - 1) * (sizeY - 1);
+
+    size_t countNodes = grid3d->getCountPoints();
+    size_t countFE = grid3d->getCountFE();
+
+    // Ищем ближайшую координатную линию по оси Y
+    size_t s, i;
+    for (s = 0, i = 0; i < sizeY && y > coords[s].y; s += sizeX, i++);
+
+    if (s && coords[s].y - y > y - coords[s - 1].y) // выбираем более близкую координатную линию
+        s--;
+
+//    cout << "s=" << s / sizeX <<endl;
+
+    // Создаем файл NVTR
+    ofstream file("nvtr.txt");
+    file << (sizeX - 1) * (sizeZ - 1) << endl;
+    for (size_t iZ = 0; iZ < sizeZ - 1; iZ++)
+    {
+        for (size_t iX = 0; iX < sizeX - 1; iX++)
+        {
+            size_t tmp = iZ * sizeX + iX + 1;
+            file << tmp << " " << tmp + 1 << " " << tmp + sizeX << " " << tmp + sizeX + 1 << endl;
+        }
+    }
+    file.close();
+
+    // Создаем файл NVKAT
+    file.open("nvkat.txt");
+    for (size_t i = 0; i < countFE; i += countFE_XY)
+        for (size_t j = 0; j < sizeX - 1; j++)
+            file << nvkat[i + j] + 1 << endl;
+    file.close();
+
+    // Создаем файлы XZ и V
+    file.open("rz.txt");
+    ofstream file2("v.txt");
+    file << sizeX * sizeZ << endl;
+    for (size_t i = 0; i < countNodes; i += sizeXY)
+        for (size_t j = 0; j < sizeX; j++)
+        {
+            file << coords[i + j].x << " " << coords[i + j].z << endl;
+            file2 << getValue(Coord3D(coords[i + j].x, y, coords[i + j].z)) << endl;
+        }
+    file.close();
+    file2.close();
 }
 
 Hel::Hel()
