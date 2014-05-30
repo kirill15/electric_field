@@ -81,8 +81,51 @@ void AnomalousField::localM_1D(double M[2][2], double h)
     M[0][1] = M[1][0] = h / 6.0;
 }
 
-void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit, size_t stepInside)
+void AnomalousField::firstBoundaryConditionOnFace(set<unsigned> *list, size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit, size_t stepInside)
 {
+
+//////////////////////////////////////////
+
+    Matrix a = matrix->matrix();
+
+    if (!limit)
+        limit = a.n;
+
+    for (size_t i = startIndex; i < limit; i += stepOutside)
+        for (size_t j = 0; j < sizeInside; j += stepInside)
+        {
+            size_t index = i + j;
+
+            a.di[index] = 1.0;
+            f[index] = 0.0;
+
+            // Обнуляем столбец выше элемента и строку левее него
+            for (size_t i = a.ig[index]; i < a.ig[index + 1]; i++)
+                a.ggl[i] = 0.0;
+
+            // Обнуляем правее и ниже
+            for (auto node = list[index].begin(); node != list[index].end(); node++)
+            {
+                size_t indexInIg = a.ig[*node];
+
+                // Выбираем нужный столбец
+                while (a.jg[indexInIg] != index)
+                    indexInIg++;
+
+                a.ggl[indexInIg] = 0.0;
+            }
+        }
+//////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+/*
     Matrix a = matrix->matrix();
 
     if (!limit)
@@ -101,7 +144,7 @@ void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t step
                 a.ggl[i] = 0.0;                 // Обнуляем Aik
 
             // Обнуляем правее и ниже
-            for(size_t i = el+1; i < a.n; i++)
+            for(size_t i = el + 1; i < a.n; i++)
             {
                 size_t left = a.ig[i],		// Начальное значение левой границы поиска
                        right = a.ig[i+1] - 1;	// Начальное значение правой границы поиска
@@ -117,53 +160,7 @@ void AnomalousField::firstBoundaryConditionOnFace(size_t startIndex, size_t step
                     a.ggl[left] = 0.0;
             }
         }
-
-
-
-
-
-    // Без учета однородности:
-    /*
-    Coord3D *xyz = grid->xyz;
-    uint *nvkat = grid->nvkat;
-    for (size_t i = startIndex; i < limit; i += stepOutside)
-        for (size_t j = 0; j < sizeInside; j += stepInside)
-        {
-            size_t el = i + j;
-//            cout << el + 1 << endl;
-
-//            if (xyz[el] == Coord3D(0.0, 0.0, 0.0)) continue;
-
-            a.di[el] = 1.0;
-            double Ug = GetUg(xyz[el], nvkat[el]);
-            f[el] = Ug;
-
-            // Обнуляем столбец выше элемента и строку левее него
-            for(size_t i = a.ig[el]; i < a.ig[el+1]; i++)
-            {
-                f[a.jg[i]] -= a.ggl[i] * Ug;	// Отнимаем от bi Aik*Ug
-                a.ggl[i] = 0.0;                 // Обнуляем Aik
-            }
-            // Обнуляем правее и ниже
-            for(size_t i = el+1; i < a.n; i++)
-            {
-                size_t left = a.ig[i],		// Начальное значение левой границы поиска
-                       right = a.ig[i+1] - 1;	// Начальное значение правой границы поиска
-                while(a.jg[left] < el && left <= right)	// Бинарный поиск нужного столбца (если он есть)
-                {
-                    size_t mid = (left + right) / 2;
-                    if(a.jg[mid] < el)
-                        left = mid + 1;
-                    else
-                        right = mid;
-                }
-                if(a.jg[left] == el)	// Проверяем, а вдруг в этом столбце вообще нет элемента
-                {
-                    f[i] -= a.ggl[left] * Ug;
-                    a.ggl[left] = 0.0;
-                }
-            }
-        }*/
+*/
 }
 
 int AnomalousField::createGrid(string fileWithArea, string fileWithGrid, size_t fragmentation)
@@ -227,16 +224,51 @@ double AnomalousField::getValue(Coord3D xyz)
     size_t sizeY = grid->getSizeY();
     size_t sizeZ = grid->getSizeZ();
 
-    if (xyz.x < coords[0].x || xyz.x > coords[sizeX - 1].x || xyz.y < coords[0].y || xyz.y > coords[sizeX * sizeY - 1].y || xyz.z < coords[0].z || xyz.z > coords[sizeX * sizeY * sizeZ - 1].z)
-        throw "Point does not lie in the field of";
+    if (xyz.x < coords[0].x || xyz.x > coords[sizeX - 1].x || xyz.y < coords[0].y ||xyz.y > coords[sizeX * sizeY - 1].y
+                            ||xyz.z < coords[0].z || xyz.z > coords[sizeX * sizeY * sizeZ - 1].z)
+        throw "Point doesn't lie in the field of";
 
     size_t sizeXY = sizeX * sizeY;
 
-    // Получаем номера координатных линий
-    size_t p, s, l, i; /* p - индекс координаты по Х, s - по Y, l - по Z */
-    for (p = 1; p < sizeX && xyz.x > coords[p].x; p++);
-    for (s = sizeX, i = 0; i < sizeY && xyz.y > coords[s].y; s += sizeX, i++);
-    for (l = sizeXY, i = 0; i < sizeZ && xyz.z > coords[l].z; l += sizeXY, i++);
+    // Получаем координату, которая ограничивает искомый элемент с большей стороны
+    size_t p, s, l; /* p - индекс координаты по Х, s - по Y, l - по Z */
+
+    size_t first = 1, last = sizeX; // last - номер элемента в массиве, СЛЕДУЮЩЕГО ЗА последним
+    while (first < last)
+    {
+        size_t mid = first + (last - first) / 2;
+        if (xyz.x <= coords[mid].x)
+            last = mid;
+        else
+            first = mid + 1;
+    }
+    p = last;
+
+    first = 1, last = sizeY;
+    while (first < last)
+    {
+        size_t mid = first + (last - first) / 2;
+        if (xyz.y <= coords[mid * sizeX].y)
+            last = mid;
+        else
+            first = mid + 1;
+    }
+    s = last * sizeX;
+
+    first = 1, last = sizeZ;
+    while (first < last)
+    {
+        size_t mid = first + (last - first) / 2;
+        if (xyz.z <= coords[mid * sizeXY].z)
+            last = mid;
+        else
+            first = mid + 1;
+    }
+    l = last * sizeXY;
+
+//    for (p = 1; p < sizeX && xyz.x > coords[p].x; p++);
+//    for (s = sizeX, i = 0; i < sizeY && xyz.y > coords[s].y; s += sizeX, i++);
+//    for (l = sizeXY, i = 0; i < sizeZ && xyz.z > coords[l].z; l += sizeXY, i++);
 
     // Получаем глобальные номера базисных функций
     size_t k[8];
@@ -266,6 +298,7 @@ double AnomalousField::getValue(Coord3D xyz)
     return v[k[0]] * X1*Y1*Z1  +  v[k[1]] * X2*Y1*Z1  +  v[k[2]] * X1*Y2*Z1  +  v[k[3]] * X2*Y2*Z1  +
            v[k[4]] * X1*Y1*Z2  +  v[k[5]] * X2*Y1*Z2  +  v[k[6]] * X1*Y2*Z2  +  v[k[7]] * X2*Y2*Z2;
 }
+
 void AnomalousField::createLocalG(const Coord3D p[8], double *G[8][8])
 {
 
@@ -365,7 +398,6 @@ void AnomalousField::createLocalG(const Coord3D p[8], double *G[8][8])
 
     for (size_t j = 0; j < 9; j++)
         G[7][7][j] = K8[j] * P[j];
-
 }
 
 void AnomalousField::createLocalF(const Coord3D p[8], int nvk, double *G[8][8], double F[])
@@ -464,7 +496,6 @@ int AnomalousField::readSigma(string fileWithSigma)
             }
         for (size_t k = 0; k < 9; k++)
             rotations[i][k] = tmp[k];
-
     }
 
     return 0;
@@ -593,16 +624,65 @@ void AnomalousField::firstBoundaryCondition()
 
     size_t sizeXY = sizeX * sizeY;
 
+    // Создание списка смежности для каждой вершины
+    set<unsigned> *list = new set<unsigned>[a.n];
+
+    // Список смежных узлов для каждого узла в порядке возрастания
+    size_t countFE = grid->getCountFE();
+    uint **nvtr = grid->getNvtr();
+    for (size_t i = 0; i < countFE; i++)
+    {
+        uint *tmp = nvtr[i];
+
+        // Для каждого узла текущего элемента...
+        for (size_t j = 0; j < 8; j++)
+        {
+            // ...добавляем в список смежные с ним узлы
+            for (size_t k = 0; k < 8; k++)
+            {
+                // Добавляем только те узлы, глобальный номер которых больше текущего
+                if (tmp[k] > tmp[j])
+                    list[tmp[j]].insert(tmp[k]);
+            }
+        }
+    }
+
     // Ближняя грань
-    firstBoundaryConditionOnFace(0, sizeXY, sizeX);
+    firstBoundaryConditionOnFace(list, 0, sizeXY, sizeX);
     // Дальняя грань
-    firstBoundaryConditionOnFace(sizeXY - sizeX, sizeXY, sizeX);
+    firstBoundaryConditionOnFace(list, sizeXY - sizeX, sizeXY, sizeX);
     // Левая грань
-    firstBoundaryConditionOnFace(sizeX, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
+    firstBoundaryConditionOnFace(list, sizeX, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
     // Правая грань
-    firstBoundaryConditionOnFace(2 * sizeX - 1, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
+    firstBoundaryConditionOnFace(list, 2 * sizeX - 1, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
     // Нижняя грань
-    firstBoundaryConditionOnFace(sizeX + 1, sizeX, sizeX - 2, sizeXY - sizeX - 1);
+    firstBoundaryConditionOnFace(list, sizeX + 1, sizeX, sizeX - 2, sizeXY - sizeX - 1);
+
+    delete[] list;
+
+
+
+/*
+    // Ближняя грань
+    firstBoundaryConditionOnFace(0, 0, sizeXY, sizeX);
+    // Дальняя грань
+    firstBoundaryConditionOnFace(0, sizeXY - sizeX, sizeXY, sizeX);
+    // Левая грань
+    firstBoundaryConditionOnFace(0, sizeX, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
+    // Правая грань
+    firstBoundaryConditionOnFace(0, 2 * sizeX - 1, sizeXY, sizeXY - 2 * sizeX, a.n, sizeX);
+    // Нижняя грань
+    firstBoundaryConditionOnFace(0, sizeX + 1, sizeX, sizeX - 2, sizeXY - sizeX - 1);
+*/
+
+//    matrix->saveElements();
+/*
+    ofstream fff("fff.txt");
+    for (size_t i = 0; i < a.n; i++)
+        fff << f[i] << endl;
+    fff.close();
+*/
+//    exit(0);
 }
 
 void AnomalousField::solve(string method, size_t maxIter, double x0)

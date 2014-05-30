@@ -4,6 +4,27 @@
 using namespace std;
 
 
+void NormalField::gaussianElimination(size_t index, size_t *relatedNodes, size_t countRelatedNodes)
+{
+    static Matrix a = matrix->matrix();
+
+    // Обнуляем столбец выше элемента и строку левее него
+    for (size_t i = a.ig[index]; i < a.ig[index + 1]; i++)
+        a.ggl[i] = 0.0;
+
+    // Обнуляем правее и ниже
+    for (size_t node = 0; node < countRelatedNodes; node++)
+    {
+        size_t indexInIg = a.ig[relatedNodes[node]];
+
+        // Выбираем нужный столбец
+        while (a.jg[indexInIg] != index)
+            indexInIg++;
+
+        a.ggl[indexInIg] = 0.0;
+    }
+}
+
 NormalField::NormalField() : grid(nullptr), matrix(nullptr), f(nullptr), v(nullptr), eps(1e-15)
 {
 }
@@ -37,7 +58,7 @@ int NormalField::readSigma(string fileWithSigma)
     ifstream file(fileWithSigma.c_str());
     if (!file.is_open())
     {
-        cerr << "Error with opening sigma.txt";
+        cerr << "Error with opening sigma.txt" << endl;
         return -1;
     }
 
@@ -164,7 +185,87 @@ void NormalField::createGlobalRightPart()
 void NormalField::firstBoundaryCondition()
 {
     Matrix a = matrix->matrix();
+    unsigned sizeR = grid->getSizeR();
 
+    size_t nodesRelated[3]; // Узлы, большие по номеру, чем "краевой" узел
+
+    /// Задаем однородные краевые условия снизу
+    nodesRelated[0] = sizeR;
+    nodesRelated[1] = sizeR + 1;
+    a.di[0] = 1.0;
+    gaussianElimination(0, nodesRelated, 2);
+
+    size_t endIndex = sizeR - 1;
+    for (size_t index = 1; index < endIndex; index++)
+    {
+        a.di[index] = 1.0;
+
+        nodesRelated[0] = index + sizeR - 1;
+        nodesRelated[1] = nodesRelated[0] + 1;
+        nodesRelated[2] = nodesRelated[1] + 1;
+
+        gaussianElimination(index, nodesRelated, 3);
+    }
+
+    /// Задаем однородные краевые условия справа
+    endIndex = a.n - 1;
+    for (size_t index = sizeR - 1; index < endIndex; index += sizeR)
+    {
+        a.di[index] = 1.0;
+
+        nodesRelated[0] = index + sizeR - 1;
+
+        gaussianElimination(index, nodesRelated, 1);
+    }
+    a.di[endIndex] = 1.0;
+    gaussianElimination(endIndex, nullptr, 0);
+
+
+
+
+/*
+    size_t startIndex = 0;
+    size_t endIndex = sizeR;
+    size_t step = 1;
+
+    for (int i = 0; i < 2; i++)
+    {
+        for (size_t index = startIndex; index < endIndex; index += step)
+        {
+            a.di[index] = 1.0;
+            f[index] = 0.0;
+
+            // Обнуляем столбец выше элемента и строку левее него
+            for (size_t i = a.ig[index]; i < a.ig[index + 1]; i++)
+                a.ggl[i] = 0.0;
+
+            // Обнуляем правее и ниже
+            for (size_t i = index + 1; i < a.n; i++)
+            {
+                size_t left = a.ig[i]; // Начальное значение левой границы поиска
+                size_t right = a.ig[i + 1] - 1; // Начальное значение правой границы поиска
+
+                // Ищем нужный столбец
+                while (a.jg[left] < index && left <= right)
+                    left++;
+
+                // Если в этом столбце есть элемент, то присваиваем ему значение
+                if (a.jg[left] == index)
+                    a.ggl[left] = 0.0;
+            }
+        }
+
+        /// Задаем однородные краевые условия справа
+        startIndex = 2 * sizeR - 1;
+        endIndex = a.n;
+        step = sizeR;
+    }
+*/
+
+
+
+
+/*
     /// Задаем однородные краевые условия снизу
     unsigned sizeR = grid->getSizeR();
 
@@ -218,6 +319,11 @@ void NormalField::firstBoundaryCondition()
                 a.ggl[left] = 0.0;
         }
     }
+*/
+
+//    matrix->saveElements();
+
+
 }
 
 
@@ -290,14 +396,14 @@ void NormalField::createPortrait()
     matrix->generatePortrait(grid, 4);
 }
 
-double NormalField::getSigma(double z)
+double NormalField::getSigma(double z) const
 {
     size_t num = grid->getArea(z);
     return sigmas[num];
 }
 
 
-double NormalField::getValue(Coord rz)
+double NormalField::getValue(Coord rz) const
 {
     Coord *coords = grid->rz;
     size_t sizeX = grid->getSizeR();
@@ -350,7 +456,7 @@ double NormalField::getValue(Coord rz)
 }
 
 
-Grid2D *NormalField::getGrid()
+Grid2D *NormalField::getGrid() const
 {
     return grid;
 }

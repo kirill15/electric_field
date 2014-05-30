@@ -55,14 +55,16 @@ int main()
     hel.setJ(opt_J);
     hel.setEps(opt_epsForNormalField, opt_epsForAnomalousField);
     hel.setHelCoords(Coord3D(opt_helX, 0, 0), Coord3D(-opt_helX, 0, 0));
-    hel.findNormalField("../normal_field/area.txt", "../normal_field/grid.txt", "../normal_field/sigma.txt");
+    hel.findNormalField("../normal_field/area.txt", "../normal_field/grid.txt", "../normal_field/sigma.txt", true);
     hel.findAnomalousField("../normal_field/area3D.txt", "../normal_field/grid3D.txt", "../normal_field/sigma3D.txt");
+
+//    return 0;
 
     gettimeofday(&t2, NULL);
     cout << "Время: " << (long long)t2.tv_sec * 1000 + t2.tv_usec / 1000 - (long long)t1.tv_sec * 1000 + t1.tv_usec / 1000 << " мс" << endl;
 
-    ofstream graf("grafff_1");
-    bool isNOTanomalous = false;
+//    ofstream graf("grafff_1");
+//    bool isNOTanomalous = false;
 
 //    int koord1 = -8000, koord2 = koord1 + 50;
 //    while (koord2 <= 8000)
@@ -98,6 +100,16 @@ int main()
     cout << std::fixed  << 200 << "\t" << std::scientific << hel.getValue(Coord3D(200, 0, 0)) << endl;
 
 
+
+    Coord3D coord;
+    while(false)
+    {
+        cout << "Input: ";
+        cin >> coord.x >> coord.y >> coord.z;
+        cout << hel.getAnomalousField()->getValue(coord) << endl;
+    }
+
+
     return 0;
 }
 
@@ -109,4 +121,16 @@ int main()
     double *v = u0.getV(size);
     test(v, u0.getGrid()->rz, size);
     cout << "Сравнение с точным напечатано" << endl;
+*/
+
+
+
+/*
+ofstream ff("ff.txt");
+size_t size;
+double *v = hel.getAnomalousField()->getV(size);
+Grid3D *grid = hel.getAnomalousField()->getGrid();
+for (size_t i = 0; i < size; i++)
+    ff << grid->xyz[i].x << "\t" << grid->xyz[i].y << "\t" << grid->xyz[i].z << "\t" << v[i] << endl;
+ff.close();
 */

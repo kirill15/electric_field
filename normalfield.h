@@ -22,16 +22,8 @@ private:
     unsigned sourceNode; // Номер узла точечного источника
     double sourceValue; // Значение плотности источника
 
-/*
-    // Значение sigma
-    double sigma(int nvk);*/
-
-    // Значение Ug
-    /* rz::Coord - координата узла
-     * nk::int - номер в каталоге первого краевого условия
-     */
-    double Ug(Coord rz, int nk);
-
+    // Гауссово исключение
+    void gaussianElimination(size_t index, size_t *relatedNodes, size_t countRelatedNodes);
 
 public:
     NormalField();
@@ -91,15 +83,15 @@ public:
 
 
     // Получить значение σ на слое
-    double getSigma(double z);
+    double getSigma(double z) const;
 
 
     // Получить решение в точке
-    double getValue(Coord rz);
+    double getValue(Coord rz) const;
 
 
     // Получить сетку
-    Grid2D *getGrid();
+    Grid2D *getGrid() const;
 
     // Задать сетку
     void setGrid(Grid2D *value);
@@ -117,7 +109,7 @@ public:
     // Задать значение eps
     void setEps(double value);
 
-    // Получить позицию и значение источника
+    // Получить позицию (номер узла) и значение источника
     void getSource(unsigned &node, double &value) const;
 
     // Задать позицию и значение источника

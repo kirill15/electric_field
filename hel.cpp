@@ -39,8 +39,14 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
     vZero.createGlobalRightPart();
     cout << "--Глобальный вектор правой части создан" << endl;
 
+
+
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
     vZero.firstBoundaryCondition();
+    gettimeofday(&t2, NULL);
     cout << "--Первые краевые учтены" << endl;
+    cout << "----Время учета краевых: " << (long long)t2.tv_sec * 1000 + t2.tv_usec / 1000 - (long long)t1.tv_sec * 1000 + t1.tv_usec / 1000 << " мс" << endl;
 
     vZero.solve();
     cout << "--СЛАУ решена" << endl;
@@ -50,8 +56,8 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
         vZero.saveSolve();
         cout << "----Решене сохранено" << endl;
     }
-    /*
-    if (vZero.getGrid()->txtToDat("../normal_field/txtToDat/txttodat") == 0)
+
+    if (isSaveFiles && vZero.getGrid()->txtToDat("../normal_field/txtToDat/txttodat") == 0)
     {
         cout << "Сетка сохранена в бинарном виде" << endl;
 
@@ -61,7 +67,7 @@ void Hel::findNormalField(string fileWithArea, string fileWithGrid, string fileW
         if (c == 'y' || c == 'Y')
             system("cd for_telma && wineconsole go.bat");
     }
-*/
+
 
 
     cout << "10, 10, -50:\t" << vZero.getValue(Coord(sqrt(10*10 + 10*10), -50)) << endl;
@@ -103,8 +109,13 @@ void Hel::findAnomalousField(string fileWithArea, string fileWithGrid, string fi
     cout << "----OK" << endl;
 
     cout << "--Учет краевых условий" << endl;
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
     vPlus.firstBoundaryCondition();
+    gettimeofday(&t2, NULL);
     cout << "----OK" << endl;
+    cout << "------Время учета краевых: " << (long long)t2.tv_sec * 1000 + t2.tv_usec / 1000 - (long long)t1.tv_sec * 1000 + t1.tv_usec / 1000 << " мс" << endl;
+
 
 //    vPlus.getMatrix()->saveElements();
 
@@ -221,15 +232,6 @@ void Hel::CreateSectionXZ(double y)
 
     size_t countNodes = grid3d->getCountPoints();
     size_t countFE = grid3d->getCountFE();
-
-    // Ищем ближайшую координатную линию по оси Y
-    size_t s, i;
-    for (s = 0, i = 0; i < sizeY && y > coords[s].y; s += sizeX, i++);
-
-    if (s && coords[s].y - y > y - coords[s - 1].y) // выбираем более близкую координатную линию
-        s--;
-
-//    cout << "s=" << s / sizeX <<endl;
 
     // Создаем файл NVTR
     ofstream file("nvtr.txt");

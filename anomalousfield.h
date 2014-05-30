@@ -55,8 +55,9 @@ private:
      * sizeInside::size_t - размер ребра
      * limit::size_t - максимальное значение номера узла
      * stepInside::size_t - шаг "внутренний"
+     * list::*std::set<unsigned> - список смежных вершин
      */
-    void firstBoundaryConditionOnFace(size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit = 0, size_t stepInside = 1);
+    void firstBoundaryConditionOnFace(std::set<unsigned> *list, size_t startIndex, size_t stepOutside, size_t sizeInside, size_t limit = 0, size_t stepInside = 1);
 
 
 public:
